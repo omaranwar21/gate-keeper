@@ -76,6 +76,10 @@ pids/
 .env.*
 !.env.example
 
+# ---------- Local-only notes (draft README content, not committed) ----------
+NOTES.local.md
+prisma-guide.pdf
+
 # ---------- OS ----------
 .DS_Store
 Thumbs.db

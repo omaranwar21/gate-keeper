@@ -1,0 +1,54 @@
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '../generated/prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateBuildingDto } from './dto/create-building.dto';
+import { UpdateBuildingDto } from './dto/update-building.dto';
+
+@Injectable()
+export class BuildingsService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  create(dto: CreateBuildingDto) {
+    return this.prisma.building.create({ data: dto }).catch((error) => {
+      throw this.mapError(error);
+    });
+  }
+
+  findAll() {
+    return this.prisma.building.findMany({ orderBy: { name: 'asc' } });
+  }
+
+  async findOne(id: string) {
+    const building = await this.prisma.building.findUnique({ where: { id } });
+    if (!building) {
+      throw new NotFoundException('Building not found');
+    }
+    return building;
+  }
+
+  async update(id: string, dto: UpdateBuildingDto) {
+    await this.findOne(id);
+    return this.prisma.building.update({ where: { id }, data: dto }).catch((error) => {
+      throw this.mapError(error);
+    });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    await this.prisma.building.delete({ where: { id } }).catch((error) => {
+      throw this.mapError(error);
+    });
+  }
+
+  private mapError(error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return new ConflictException('A building with this name already exists');
+      }
+      if (error.code === 'P2003') {
+        return new ConflictException('Cannot delete a building that still has units');
+      }
+    }
+    return error;
+  }
+}
