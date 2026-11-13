@@ -20,6 +20,9 @@ build/
 out/
 *.tsbuildinfo
 
+# Prisma generated client (rebuilt by `prisma generate` on install)
+**/src/generated/
+
 # Frontend frameworks
 .next/
 .nuxt/
