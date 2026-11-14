@@ -2,8 +2,6 @@
 
 import { use, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { ArrowLeft, Ban, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import { StatusBadge } from "@/components/design-system/status-badge";
@@ -13,8 +11,7 @@ import { ErrorState } from "@/components/design-system/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
-import { passesApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
+import { usePassDetail, useRevokePass, useDeletePass } from "@/hooks/queryHooks/usePasses";
 import { passStatusTone } from "@/lib/status";
 import { passWindowSummary } from "@/lib/pass-summary";
 import { guestPassLink } from "@/lib/pass-link";
@@ -27,34 +24,14 @@ export default function GuestPassDetailPage({ params }: { params: Promise<{ id: 
   const tCommon = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [revokeOpen, setRevokeOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((d) => t(`days.${d}`));
 
-  const query = useQuery({
-    queryKey: queryKeys.passes.detail(id),
-    queryFn: () => passesApi.getOne(id),
-  });
-
-  const revokeMutation = useMutation({
-    mutationFn: () => passesApi.revoke(id),
-    onSuccess: () => {
-      toast.success(t("revokeSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
-      setRevokeOpen(false);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: () => passesApi.remove(id),
-    onSuccess: () => {
-      toast.success(t("deleteSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
-      router.push("/resident/passes");
-    },
-  });
+  const query = usePassDetail(id);
+  const revokeMutation = useRevokePass();
+  const deleteMutation = useDeletePass();
 
   if (query.isLoading) {
     return (
@@ -129,7 +106,7 @@ export default function GuestPassDetailPage({ params }: { params: Promise<{ id: 
         onOpenChange={setRevokeOpen}
         title={t("revokeConfirmTitle")}
         description={t("revokeConfirmDesc", { guestName: pass.guestName })}
-        onConfirm={() => revokeMutation.mutate()}
+        onConfirm={() => revokeMutation.mutate(id, { onSuccess: () => setRevokeOpen(false) })}
         isPending={revokeMutation.isPending}
       />
       <ConfirmDialog
@@ -137,7 +114,7 @@ export default function GuestPassDetailPage({ params }: { params: Promise<{ id: 
         onOpenChange={setDeleteOpen}
         title={t("deleteConfirmTitle")}
         description={t("deleteConfirmDesc")}
-        onConfirm={() => deleteMutation.mutate()}
+        onConfirm={() => deleteMutation.mutate(id, { onSuccess: () => router.push("/resident/passes") })}
         isPending={deleteMutation.isPending}
       />
     </div>

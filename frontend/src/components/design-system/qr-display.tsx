@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useTranslations } from "next-intl";
 import { Download, Share2 } from "lucide-react";
@@ -26,17 +26,17 @@ export function QrDisplay({
 }) {
   const t = useTranslations("passes");
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canShare, setCanShare] = useState(false);
-
   // navigator.share with files isn't supported everywhere (e.g. most desktop
   // browsers), so only show the Share button once we know the API is there.
-  useEffect(() => {
-    setCanShare(
+  // Lazy-initialized (not an effect) since it's a pure, one-time capability
+  // check with no reactive dependency.
+  const [canShare] = useState(
+    () =>
+      typeof navigator !== "undefined" &&
       typeof navigator.share === "function" &&
-        typeof navigator.canShare === "function" &&
-        navigator.canShare({ files: [new File([], "x.png", { type: "image/png" })] }),
-    );
-  }, []);
+      typeof navigator.canShare === "function" &&
+      navigator.canShare({ files: [new File([], "x.png", { type: "image/png" })] }),
+  );
 
   function handleDownload() {
     const canvas = canvasRef.current;

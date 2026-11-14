@@ -4,23 +4,18 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
 import { ShieldCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormField } from "@/components/design-system/form-field";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
-import { apiClient } from "@/lib/api/client";
 import { isApiError } from "@/lib/api/error";
 import { loginSchema, type LoginInput } from "@/lib/validation/auth";
-import { useRouter } from "@/i18n/navigation";
-import { ROLE_HOME } from "@/lib/auth/constants";
-import type { Role } from "@/types/api";
+import { useUserLogin } from "@/hooks/queryHooks/useLogin";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
-  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -29,19 +24,7 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
-  const mutation = useMutation({
-    mutationFn: (data: LoginInput) => apiClient.post<{ role: Role }>("/auth/login", data),
-    onSuccess: (response) => {
-      router.replace(ROLE_HOME[response.data.role]);
-    },
-    onError: (error) => {
-      if (isApiError(error) && error.status === 401) {
-        setServerError(t("invalidCredentials"));
-      } else {
-        setServerError(t("genericError"));
-      }
-    },
-  });
+  const mutation = useUserLogin();
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4 py-10">
@@ -62,7 +45,11 @@ export default function LoginPage() {
           className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(15,28,48,0.04),0_12px_32px_-20px_rgba(15,28,48,0.35)]"
           onSubmit={handleSubmit((data) => {
             setServerError(null);
-            mutation.mutate(data);
+            mutation.mutate(data, {
+              onError: (error) => {
+                setServerError(isApiError(error) && error.status === 401 ? t("invalidCredentials") : t("genericError"));
+              },
+            });
           })}
         >
           {serverError && (

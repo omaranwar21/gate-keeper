@@ -15,7 +15,9 @@ export function CameraScanner({ onScan, disabled }: { onScan: (token: string) =>
   const [error, setError] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const onScanRef = useRef(onScan);
-  onScanRef.current = onScan;
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
   // Html5Qrcode calls the decode callback on every scanned frame (~10/s) for
   // as long as the same code is in view, so without a lock a single hold of
   // the QR code in front of the camera fires onScan — and the scan mutation

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -15,8 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { PendingBackendState } from "@/components/design-system/empty-state";
 import { FormField } from "@/components/design-system/form-field";
-import { usersApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
+import { useUsersList } from "@/hooks/queryHooks/useUsers";
 
 export function AssignResidentDialog({
   open,
@@ -35,12 +33,7 @@ export function AssignResidentDialog({
   const tCommon = useTranslations("common");
   const [selected, setSelected] = useState<string>("");
 
-  const query = useQuery({
-    queryKey: queryKeys.users.list({ role: "resident" }),
-    queryFn: () => usersApi.list({ role: "resident", perPage: 100 }),
-    enabled: open,
-    retry: false,
-  });
+  const query = useUsersList({ role: "resident", perPage: 100 }, { enabled: open });
 
   const residents = (query.data?.data ?? []).filter((user) => !excludeUserIds.includes(user.id));
 

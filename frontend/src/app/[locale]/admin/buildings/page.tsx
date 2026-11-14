@@ -2,72 +2,29 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import { DataTable, type DataTableColumn } from "@/components/design-system/data-table";
 import { ConfirmDialog } from "@/components/design-system/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { BuildingFormDialog } from "./building-form-dialog";
-import { buildingsApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
-import { isApiError, apiErrorMessages } from "@/lib/api/error";
+import { useBuildingsList, useCreateBuilding, useUpdateBuilding, useDeleteBuilding } from "@/hooks/queryHooks/useBuildings";
 import type { Building } from "@/types/api";
-import type { BuildingFormInput } from "@/lib/validation/building";
 
 export default function AdminBuildingsPage() {
   const t = useTranslations("admin.buildings");
   const tCommon = useTranslations("common");
   const locale = useLocale();
-  const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
   const [formTarget, setFormTarget] = useState<Building | "new" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Building | null>(null);
 
-  const query = useQuery({
-    queryKey: queryKeys.buildings.list({ page }),
-    queryFn: () => buildingsApi.list({ page }),
-  });
+  const query = useBuildingsList({ page });
 
-  function handleMutationError(error: unknown) {
-    if (isApiError(error)) {
-      toast.error(apiErrorMessages(error)[0] ?? tCommon("somethingWrong"));
-    } else {
-      toast.error(tCommon("somethingWrong"));
-    }
-  }
-
-  const createMutation = useMutation({
-    mutationFn: buildingsApi.create,
-    onSuccess: () => {
-      toast.success(t("createSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.buildings.all });
-      setFormTarget(null);
-    },
-    onError: handleMutationError,
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (vars: { id: string; data: BuildingFormInput }) => buildingsApi.update(vars.id, vars.data),
-    onSuccess: () => {
-      toast.success(t("updateSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.buildings.all });
-      setFormTarget(null);
-    },
-    onError: handleMutationError,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => buildingsApi.remove(id),
-    onSuccess: () => {
-      toast.success(t("deleteSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.buildings.all });
-      setDeleteTarget(null);
-    },
-    onError: handleMutationError,
-  });
+  const createMutation = useCreateBuilding();
+  const updateMutation = useUpdateBuilding();
+  const deleteMutation = useDeleteBuilding();
 
   const columns: DataTableColumn<Building>[] = [
     { key: "name", header: t("name"), cell: (b) => <span className="font-medium text-foreground">{b.name}</span> },
@@ -137,9 +94,9 @@ export default function AdminBuildingsPage() {
         isPending={createMutation.isPending || updateMutation.isPending}
         onSubmit={(data) => {
           if (formTarget && formTarget !== "new") {
-            updateMutation.mutate({ id: formTarget.id, data });
+            updateMutation.mutate({ id: formTarget.id, data }, { onSuccess: () => setFormTarget(null) });
           } else {
-            createMutation.mutate(data);
+            createMutation.mutate(data, { onSuccess: () => setFormTarget(null) });
           }
         }}
       />
@@ -149,7 +106,7 @@ export default function AdminBuildingsPage() {
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t("deleteConfirmTitle")}
         description={t("deleteConfirmDesc")}
-        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })}
         isPending={deleteMutation.isPending}
       />
     </div>

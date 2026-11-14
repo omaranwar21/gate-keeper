@@ -3,14 +3,12 @@
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { RotateCcw } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import { Button } from "@/components/ui/button";
 import { CameraScanner } from "./camera-scanner";
 import { ScanResultPanel } from "./scan-result-panel";
-import { passesApi } from "@/lib/api/endpoints";
+import { useScanPass } from "@/hooks/queryHooks/usePasses";
 import { extractTokenFromInput } from "@/lib/pass-link";
 import { formatCairoDateTime } from "@/lib/dates";
 import { useGuardScanStore } from "@/store/guard-scan-store";
@@ -21,13 +19,8 @@ export default function GuardScanPage() {
   const locale = useLocale();
   const searchParams = useSearchParams();
   const history = useGuardScanStore((state) => state.history);
-  const pushScan = useGuardScanStore((state) => state.pushScan);
 
-  const mutation = useMutation({
-    mutationFn: (token: string) => passesApi.scan(token),
-    onSuccess: (response) => pushScan(response),
-    onError: () => toast.error(t("cameraError")),
-  });
+  const mutation = useScanPass();
 
   useEffect(() => {
     const token = searchParams.get("token");

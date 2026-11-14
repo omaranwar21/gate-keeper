@@ -24,6 +24,13 @@ export interface UnitResidentEntry {
   user: User;
 }
 
+// ---- auth -------------------------------------------------------
+
+export const authApi = {
+  login: (data: { email: string; password: string }) =>
+    apiClient.post<{ role: Role }>("/auth/login", data).then((r) => r.data),
+};
+
 // ---- buildings -------------------------------------------------------
 
 export const buildingsApi = {

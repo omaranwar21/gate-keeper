@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/design-system/page-header";
 import { DataTable, type DataTableColumn } from "@/components/design-system/data-table";
 import { FilterBar, type FilterConfig } from "@/components/design-system/filter-bar";
 import { StatusBadge } from "@/components/design-system/status-badge";
 import { PendingBackendState } from "@/components/design-system/empty-state";
-import { accessLogApi, buildingsApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
+import { useAccessLogList } from "@/hooks/queryHooks/useAccessLog";
+import { useBuildingsList } from "@/hooks/queryHooks/useBuildings";
 import { scanResultTone } from "@/lib/status";
 import { formatCairoDateTime } from "@/lib/dates";
 import type { AccessLog, ScanResult } from "@/types/api";
@@ -25,17 +24,9 @@ export default function AdminAccessLogPage() {
   const [buildingId, setBuildingId] = useState<string>();
   const [result, setResult] = useState<string>();
 
-  const buildingsQuery = useQuery({
-    queryKey: queryKeys.buildings.list({ perPage: 100 }),
-    queryFn: () => buildingsApi.list({ perPage: 100 }),
-  });
+  const buildingsQuery = useBuildingsList({ perPage: 100 });
 
-  const query = useQuery({
-    queryKey: queryKeys.accessLog.list({ page, date, buildingId, result }),
-    queryFn: () =>
-      accessLogApi.list({ page, date, buildingId, result: result as ScanResult | undefined }),
-    retry: false,
-  });
+  const query = useAccessLogList({ page, date, buildingId, result: result as ScanResult | undefined });
 
   const filters: FilterConfig[] = [
     { key: "date", type: "date" },

@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Users } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import { DataTable, type DataTableColumn } from "@/components/design-system/data-table";
@@ -12,66 +10,27 @@ import { ConfirmDialog } from "@/components/design-system/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { UnitFormDialog } from "./unit-form-dialog";
-import { buildingsApi, unitsApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
-import { isApiError, apiErrorMessages } from "@/lib/api/error";
+import { useBuildingsList } from "@/hooks/queryHooks/useBuildings";
+import { useUnitsList, useCreateUnit, useUpdateUnit, useDeleteUnit } from "@/hooks/queryHooks/useUnits";
 import type { Unit } from "@/types/api";
-import type { UnitFormOutput } from "@/lib/validation/unit";
 
 export default function AdminUnitsPage() {
   const t = useTranslations("admin.units");
   const tCommon = useTranslations("common");
-  const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
   const [buildingId, setBuildingId] = useState<string | undefined>(undefined);
   const [formTarget, setFormTarget] = useState<Unit | "new" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Unit | null>(null);
 
-  const buildingsQuery = useQuery({
-    queryKey: queryKeys.buildings.list({ perPage: 100 }),
-    queryFn: () => buildingsApi.list({ perPage: 100 }),
-  });
+  const buildingsQuery = useBuildingsList({ perPage: 100 });
   const buildings = buildingsQuery.data?.data ?? [];
 
-  const query = useQuery({
-    queryKey: queryKeys.units.list({ page, buildingId }),
-    queryFn: () => unitsApi.list({ page, buildingId }),
-  });
+  const query = useUnitsList({ page, buildingId });
 
-  function handleMutationError(error: unknown) {
-    toast.error(isApiError(error) ? apiErrorMessages(error)[0] ?? tCommon("somethingWrong") : tCommon("somethingWrong"));
-  }
-
-  const createMutation = useMutation({
-    mutationFn: unitsApi.create,
-    onSuccess: () => {
-      toast.success(t("createSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
-      setFormTarget(null);
-    },
-    onError: handleMutationError,
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (vars: { id: string; data: Partial<UnitFormOutput> }) => unitsApi.update(vars.id, vars.data),
-    onSuccess: () => {
-      toast.success(t("updateSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
-      setFormTarget(null);
-    },
-    onError: handleMutationError,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => unitsApi.remove(id),
-    onSuccess: () => {
-      toast.success(t("deleteSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
-      setDeleteTarget(null);
-    },
-    onError: handleMutationError,
-  });
+  const createMutation = useCreateUnit();
+  const updateMutation = useUpdateUnit();
+  const deleteMutation = useDeleteUnit();
 
   const columns: DataTableColumn<Unit>[] = [
     {
@@ -160,9 +119,12 @@ export default function AdminUnitsPage() {
         isPending={createMutation.isPending || updateMutation.isPending}
         onSubmit={(data) => {
           if (formTarget && formTarget !== "new") {
-            updateMutation.mutate({ id: formTarget.id, data: { number: data.number, floor: data.floor } });
+            updateMutation.mutate(
+              { id: formTarget.id, data: { number: data.number, floor: data.floor } },
+              { onSuccess: () => setFormTarget(null) },
+            );
           } else {
-            createMutation.mutate(data);
+            createMutation.mutate(data, { onSuccess: () => setFormTarget(null) });
           }
         }}
       />
@@ -172,7 +134,7 @@ export default function AdminUnitsPage() {
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t("deleteConfirmTitle")}
         description={t("deleteConfirmDesc")}
-        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })}
         isPending={deleteMutation.isPending}
       />
     </div>

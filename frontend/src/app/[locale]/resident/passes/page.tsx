@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, QrCode, Ban, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import {
@@ -17,18 +16,15 @@ import { StatusBadge } from "@/components/design-system/status-badge";
 import { ConfirmDialog } from "@/components/design-system/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { passesApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
+import { usePassesMine, useRevokePass, useDeletePass } from "@/hooks/queryHooks/usePasses";
 import { passStatusTone } from "@/lib/status";
 import { passWindowSummary } from "@/lib/pass-summary";
-import { toast } from "sonner";
 import type { GuestPass, PassStatus } from "@/types/api";
 
 export default function ResidentPassesPage() {
   const t = useTranslations("passes");
   const tCommon = useTranslations("common");
   const locale = useLocale();
-  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<string>();
   const [today, setToday] = useState<string>();
@@ -37,14 +33,10 @@ export default function ResidentPassesPage() {
 
   const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((d) => t(`days.${d}`));
 
-  const query = useQuery({
-    queryKey: queryKeys.passes.mine({ page, status, today }),
-    queryFn: () =>
-      passesApi.listMine({
-        page,
-        status: status as PassStatus | undefined,
-        today: today === "true" ? true : undefined,
-      }),
+  const query = usePassesMine({
+    page,
+    status: status as PassStatus | undefined,
+    today: today === "true" ? true : undefined,
   });
 
   const filters: FilterConfig[] = [
@@ -73,23 +65,8 @@ export default function ResidentPassesPage() {
     if (key === "today") setToday(value);
   }
 
-  const revokeMutation = useMutation({
-    mutationFn: (id: string) => passesApi.revoke(id),
-    onSuccess: () => {
-      toast.success(t("revokeSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
-      setRevokeTarget(null);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => passesApi.remove(id),
-    onSuccess: () => {
-      toast.success(t("deleteSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
-      setDeleteTarget(null);
-    },
-  });
+  const revokeMutation = useRevokePass();
+  const deleteMutation = useDeletePass();
 
   const columns: DataTableColumn<GuestPass>[] = [
     {
@@ -213,7 +190,9 @@ export default function ResidentPassesPage() {
         description={t("revokeConfirmDesc", {
           guestName: revokeTarget?.guestName ?? "",
         })}
-        onConfirm={() => revokeTarget && revokeMutation.mutate(revokeTarget.id)}
+        onConfirm={() =>
+          revokeTarget && revokeMutation.mutate(revokeTarget.id, { onSuccess: () => setRevokeTarget(null) })
+        }
         isPending={revokeMutation.isPending}
       />
 
@@ -222,7 +201,9 @@ export default function ResidentPassesPage() {
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t("deleteConfirmTitle")}
         description={t("deleteConfirmDesc")}
-        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        onConfirm={() =>
+          deleteTarget && deleteMutation.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })
+        }
         isPending={deleteMutation.isPending}
       />
     </div>

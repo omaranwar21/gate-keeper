@@ -2,8 +2,6 @@
 
 import { use, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { ArrowLeft, UserPlus, UserMinus } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import { EmptyState, ErrorState } from "@/components/design-system/empty-state";
@@ -13,48 +11,21 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/i18n/navigation";
 import { AssignResidentDialog } from "./assign-resident-dialog";
-import { unitsApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
-import { isApiError, apiErrorMessages } from "@/lib/api/error";
+import { useUnitDetail, useAssignResident, useUnassignResident } from "@/hooks/queryHooks/useUnits";
 import type { User } from "@/types/api";
 
 export default function AdminUnitDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const t = useTranslations("admin.units");
   const tCommon = useTranslations("common");
-  const queryClient = useQueryClient();
 
   const [assignOpen, setAssignOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<User | null>(null);
 
-  const query = useQuery({
-    queryKey: queryKeys.units.detail(id),
-    queryFn: () => unitsApi.getOne(id),
-  });
+  const query = useUnitDetail(id);
 
-  function handleMutationError(error: unknown) {
-    toast.error(isApiError(error) ? apiErrorMessages(error)[0] ?? tCommon("somethingWrong") : tCommon("somethingWrong"));
-  }
-
-  const assignMutation = useMutation({
-    mutationFn: (userId: string) => unitsApi.assignResident(id, userId),
-    onSuccess: () => {
-      toast.success(t("assignSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.units.detail(id) });
-      setAssignOpen(false);
-    },
-    onError: handleMutationError,
-  });
-
-  const unassignMutation = useMutation({
-    mutationFn: (userId: string) => unitsApi.unassignResident(id, userId),
-    onSuccess: () => {
-      toast.success(t("unassignSuccess"));
-      queryClient.invalidateQueries({ queryKey: queryKeys.units.detail(id) });
-      setRemoveTarget(null);
-    },
-    onError: handleMutationError,
-  });
+  const assignMutation = useAssignResident(id);
+  const unassignMutation = useUnassignResident(id);
 
   if (query.isLoading) {
     return (
@@ -124,7 +95,7 @@ export default function AdminUnitDetailPage({ params }: { params: Promise<{ id: 
         open={assignOpen}
         onOpenChange={setAssignOpen}
         excludeUserIds={unit.residents.map((r) => r.userId)}
-        onAssign={(userId) => assignMutation.mutate(userId)}
+        onAssign={(userId) => assignMutation.mutate(userId, { onSuccess: () => setAssignOpen(false) })}
         isPending={assignMutation.isPending}
       />
 
@@ -133,7 +104,9 @@ export default function AdminUnitDetailPage({ params }: { params: Promise<{ id: 
         onOpenChange={(open) => !open && setRemoveTarget(null)}
         title={t("unassign")}
         description={t("unassignConfirm", { name: removeTarget?.fullName ?? "" })}
-        onConfirm={() => removeTarget && unassignMutation.mutate(removeTarget.id)}
+        onConfirm={() =>
+          removeTarget && unassignMutation.mutate(removeTarget.id, { onSuccess: () => setRemoveTarget(null) })
+        }
         isPending={unassignMutation.isPending}
       />
     </div>

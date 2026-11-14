@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { PageHeader } from "@/components/design-system/page-header";
 import { FormField } from "@/components/design-system/form-field";
 import { DayOfWeekPicker } from "@/components/design-system/day-of-week-picker";
@@ -16,9 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "@/i18n/navigation";
-import { unitsApi, passesApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
-import { isApiError, apiErrorMessages } from "@/lib/api/error";
+import { useMyUnitsList } from "@/hooks/queryHooks/useUnits";
+import { useCreatePass } from "@/hooks/queryHooks/usePasses";
 import { cairoDateTimeToIso, timeStringToMinutes, todayInCairo } from "@/lib/dates";
 import { guestPassFormSchema, type GuestPassFormInput } from "@/lib/validation/guest-pass";
 
@@ -26,12 +23,8 @@ export default function NewGuestPassPage() {
   const t = useTranslations("passes");
   const tCommon = useTranslations("common");
   const router = useRouter();
-  const queryClient = useQueryClient();
 
-  const unitsQuery = useQuery({
-    queryKey: queryKeys.units.mine({}),
-    queryFn: () => unitsApi.listMine({ perPage: 50 }),
-  });
+  const unitsQuery = useMyUnitsList({ perPage: 50 });
 
   const today = todayInCairo();
 
@@ -70,46 +63,41 @@ export default function NewGuestPassPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [units.length]);
 
-  const createMutation = useMutation({
-    mutationFn: passesApi.create,
-    onSuccess: (pass) => {
-      toast.success(t("createSuccess", { guestName: pass.guestName }));
-      queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
-      router.push(`/resident/passes/${pass.id}`);
-    },
-    onError: (error) => {
-      if (isApiError(error) && error.status === 400) {
-        toast.error(apiErrorMessages(error)[0] ?? tCommon("somethingWrong"));
-      } else {
-        toast.error(tCommon("somethingWrong"));
-      }
-    },
-  });
+  const createMutation = useCreatePass();
 
   function onSubmit(data: GuestPassFormInput) {
+    const redirectOnSuccess = {
+      onSuccess: (pass: { id: string }) => router.push(`/resident/passes/${pass.id}`),
+    };
     if (data.type === "one_time") {
-      createMutation.mutate({
-        unitId: data.unitId,
-        guestName: data.guestName,
-        type: "one_time",
-        validFrom: cairoDateTimeToIso(data.visitDate, data.startTime),
-        validUntil: cairoDateTimeToIso(data.visitDate, data.endTime),
-      });
+      createMutation.mutate(
+        {
+          unitId: data.unitId,
+          guestName: data.guestName,
+          type: "one_time",
+          validFrom: cairoDateTimeToIso(data.visitDate, data.startTime),
+          validUntil: cairoDateTimeToIso(data.visitDate, data.endTime),
+        },
+        redirectOnSuccess,
+      );
     } else {
       if (data.daysOfWeek.length === 0) {
         setError("daysOfWeek", { message: "required" });
         return;
       }
-      createMutation.mutate({
-        unitId: data.unitId,
-        guestName: data.guestName,
-        type: "recurring",
-        validFrom: cairoDateTimeToIso(data.startDate, "00:00"),
-        validUntil: cairoDateTimeToIso(data.untilDate, "23:59"),
-        daysOfWeek: data.daysOfWeek,
-        dailyStartMin: timeStringToMinutes(data.dailyStartTime),
-        dailyEndMin: timeStringToMinutes(data.dailyEndTime),
-      });
+      createMutation.mutate(
+        {
+          unitId: data.unitId,
+          guestName: data.guestName,
+          type: "recurring",
+          validFrom: cairoDateTimeToIso(data.startDate, "00:00"),
+          validUntil: cairoDateTimeToIso(data.untilDate, "23:59"),
+          daysOfWeek: data.daysOfWeek,
+          dailyStartMin: timeStringToMinutes(data.dailyStartTime),
+          dailyEndMin: timeStringToMinutes(data.dailyEndTime),
+        },
+        redirectOnSuccess,
+      );
     }
   }
 

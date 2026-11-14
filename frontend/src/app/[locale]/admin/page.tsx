@@ -1,14 +1,12 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
 import { DoorOpen, ShieldX, Ticket } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import { StatTileGrid, type StatTileConfig } from "@/components/design-system/stat-tile";
 import { EmptyState, PendingBackendState } from "@/components/design-system/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { dashboardApi } from "@/lib/api/endpoints";
-import { queryKeys } from "@/lib/query/keys";
+import { useDashboardSummary } from "@/hooks/queryHooks/useDashboard";
 import { formatCairoDateTime } from "@/lib/dates";
 
 export default function AdminDashboardPage() {
@@ -16,11 +14,7 @@ export default function AdminDashboardPage() {
   const tPasses = useTranslations("passes");
   const locale = useLocale();
 
-  const query = useQuery({
-    queryKey: queryKeys.dashboard.summary,
-    queryFn: dashboardApi.summary,
-    retry: false,
-  });
+  const query = useDashboardSummary();
 
   if (query.isLoading) {
     return (
