@@ -82,7 +82,8 @@ prisma-guide.pdf
 .agents
 skills-lock.json
 .claude
-frontend/AGENTS.md
+/frontend/AGENTS.md
+/frontend/docs/pending-backend-endpoints.md
 
 # ---------- OS ----------
 .DS_Store
@@ -104,3 +105,4 @@ desktop.ini
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+frontend/docs/pending-backend-endpoints.md

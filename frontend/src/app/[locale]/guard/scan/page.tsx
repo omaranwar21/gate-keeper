@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/design-system/page-header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CameraScanner } from "./camera-scanner";
 import { ScanResultPanel } from "./scan-result-panel";
 import { useScanPass } from "@/hooks/queryHooks/usePasses";
@@ -18,6 +21,7 @@ export default function GuardScanPage() {
   const t = useTranslations("guard");
   const locale = useLocale();
   const searchParams = useSearchParams();
+  const [pasted, setPasted] = useState("");
   const history = useGuardScanStore((state) => state.history);
 
   const mutation = useScanPass();
@@ -27,6 +31,15 @@ export default function GuardScanPage() {
     if (token) mutation.mutate(token);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function submitPasted() {
+    const token = extractTokenFromInput(pasted);
+    if (!token) {
+      toast.error(t("emptyCodeError"));
+      return;
+    }
+    mutation.mutate(token);
+  }
 
   return (
     <div className="space-y-6">
@@ -46,13 +59,39 @@ export default function GuardScanPage() {
             </Button>
           </div>
         ) : (
-          <CameraScanner
-            onScan={(token) => {
-              const actualToken = extractTokenFromInput(token);
-              mutation.mutate(actualToken);
-            }}
-            disabled={mutation.isPending}
-          />
+          <Tabs defaultValue="camera">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="camera">{t("scanCamera")}</TabsTrigger>
+              <TabsTrigger value="paste">{t("pasteCode")}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="camera" className="pt-4">
+              <CameraScanner
+                onScan={(token) => {
+                  const actualToken = extractTokenFromInput(token);
+                  mutation.mutate(actualToken);
+                }}
+                disabled={mutation.isPending}
+              />
+            </TabsContent>
+
+            <TabsContent value="paste" className="space-y-3 pt-4">
+              <Input
+                placeholder={t("pastePlaceholder")}
+                value={pasted}
+                onChange={(event) => setPasted(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && submitPasted()}
+              />
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={submitPasted}
+                disabled={mutation.isPending}
+              >
+                {mutation.isPending ? t("checking") : t("submit")}
+              </Button>
+            </TabsContent>
+          </Tabs>
         )}
 
         {history.length > 0 && (

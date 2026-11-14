@@ -132,8 +132,7 @@ export const passesApi = {
     apiClient.post<ScanResponse>("/passes/scan", { token }).then((r) => r.data),
 };
 
-// ---- users (admin resident directory — documented but not yet shipped
-// by the backend; see docs/pending-backend-endpoints.md) ------------------
+// ---- users (admin resident directory) -----------------------------------
 
 export const usersApi = {
   list: (query: PaginationQuery & { role?: Role } = {}) =>

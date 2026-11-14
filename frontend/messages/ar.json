@@ -110,7 +110,8 @@
     "qrTitle": "رمز QR للضيف",
     "qrDesc": "شارك هذا مع {guestName} — سيقوم الحارس بمسحه عند البوابة.",
     "downloadQr": "تنزيل رمز QR",
-    "shareQr": "مشاركة رمز QR",
+    "copyLink": "نسخ رابط الضيف",
+    "linkCopied": "تم نسخ الرابط",
     "createSuccess": "تم إنشاء تصريح لـ{guestName}.",
     "updateSuccess": "تم تحديث التصريح.",
     "days": {
@@ -135,7 +136,12 @@
   },
   "guard": {
     "title": "مسح تصريح ضيف",
-    "subtitle": "وجّه الكاميرا نحو رمز QR الخاص بالضيف.",
+    "subtitle": "وجّه الكاميرا نحو رمز QR، أو ألصق الرمز أدناه.",
+    "scanCamera": "الكاميرا",
+    "pasteCode": "لصق الرمز",
+    "pastePlaceholder": "ألصق الرمز أو الرابط هنا",
+    "submit": "تحقق من التصريح",
+    "checking": "جارٍ التحقق…",
     "allowed": "مسموح",
     "denied": "مرفوض",
     "guestLabel": "الضيف",
@@ -144,7 +150,8 @@
     "recentScans": "عمليات المسح الأخيرة",
     "cameraStart": "تشغيل الكاميرا",
     "cameraStop": "إيقاف الكاميرا",
-    "cameraError": "تعذّر الوصول إلى الكاميرا.",
+    "cameraError": "تعذّر الوصول إلى الكاميرا. استخدم اللصق بدلًا من ذلك.",
+    "emptyCodeError": "ألصق رمزًا أولًا.",
     "reasons": {
       "invalid_token": "هذا الرمز غير معروف.",
       "revoked": "تم إلغاء هذا التصريح.",
@@ -196,7 +203,6 @@
       "unassignConfirm": "هل تريد إزالة {name} من هذه الوحدة؟",
       "selectResident": "اختر ساكنًا",
       "noResidentsAssigned": "لم يتم تعيين أي ساكن لهذه الوحدة بعد.",
-      "noResidentEndpoint": "دليل السكان غير مفعّل على الخادم بعد، لذا لا يمكن البحث عنهم هنا — اطلب من فريق الخادم إطلاق GET /v1/users.",
       "detailTitle": "الوحدة {number}",
       "allBuildings": "كل المباني"
     },

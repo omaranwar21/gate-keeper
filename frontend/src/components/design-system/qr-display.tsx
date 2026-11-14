@@ -1,19 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useTranslations } from "next-intl";
-import { Download, Share2 } from "lucide-react";
+import { Download, Link as LinkIcon } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-
-function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, base64] = dataUrl.split(",");
-  const mime = header.match(/:(.*?);/)?.[1] ?? "image/png";
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
 
 export function QrDisplay({
   value,
@@ -26,17 +18,6 @@ export function QrDisplay({
 }) {
   const t = useTranslations("passes");
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // navigator.share with files isn't supported everywhere (e.g. most desktop
-  // browsers), so only show the Share button once we know the API is there.
-  // Lazy-initialized (not an effect) since it's a pure, one-time capability
-  // check with no reactive dependency.
-  const [canShare] = useState(
-    () =>
-      typeof navigator !== "undefined" &&
-      typeof navigator.share === "function" &&
-      typeof navigator.canShare === "function" &&
-      navigator.canShare({ files: [new File([], "x.png", { type: "image/png" })] }),
-  );
 
   function handleDownload() {
     const canvas = canvasRef.current;
@@ -47,19 +28,9 @@ export function QrDisplay({
     link.click();
   }
 
-  function handleShare() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    // navigator.share must run synchronously within the click's user-gesture
-    // window (Safari/iOS enforce this strictly) — canvas.toBlob()'s callback
-    // fires async and loses that window, so build the Blob synchronously from
-    // the data URL instead of awaiting toBlob.
-    const file = new File([dataUrlToBlob(canvas.toDataURL("image/png"))], `${fileName}.png`, {
-      type: "image/png",
-    });
-    navigator.share({ files: [file] }).catch(() => {
-      // Share sheet dismissed — nothing to do.
-    });
+  async function handleCopyLink() {
+    await navigator.clipboard.writeText(value);
+    toast.success(t("linkCopied"));
   }
 
   return (
@@ -72,12 +43,10 @@ export function QrDisplay({
           <Download className="size-3.5" />
           {t("downloadQr")}
         </Button>
-        {canShare && (
-          <Button variant="outline" size="sm" onClick={handleShare}>
-            <Share2 className="size-3.5" />
-            {t("shareQr")}
-          </Button>
-        )}
+        <Button variant="outline" size="sm" onClick={handleCopyLink}>
+          <LinkIcon className="size-3.5" />
+          {t("copyLink")}
+        </Button>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PendingBackendState } from "@/components/design-system/empty-state";
+import { ErrorState } from "@/components/design-system/empty-state";
 import { FormField } from "@/components/design-system/form-field";
 import { useUsersList } from "@/hooks/queryHooks/useUsers";
 
@@ -47,7 +47,12 @@ export function AssignResidentDialog({
         {query.isLoading ? (
           <Skeleton className="h-9 w-full" />
         ) : query.isError ? (
-          <PendingBackendState title={tCommon("somethingWrong")} description={t("noResidentEndpoint")} />
+          <ErrorState
+            className="py-6"
+            title={tCommon("somethingWrong")}
+            retryLabel={tCommon("retry")}
+            onRetry={() => query.refetch()}
+          />
         ) : (
           <FormField label={t("selectResident")}>
             <Select value={selected} onValueChange={setSelected}>

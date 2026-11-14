@@ -10,7 +10,6 @@ export function useUsersList(
   return useQuery({
     queryKey: queryKeys.users.list(query),
     queryFn: () => usersApi.list(query),
-    retry: false,
     ...options,
   });
 }

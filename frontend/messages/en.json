@@ -110,7 +110,8 @@
     "qrTitle": "Guest QR code",
     "qrDesc": "Share this with {guestName} — the guard will scan it at the gate.",
     "downloadQr": "Download QR",
-    "shareQr": "Share QR",
+    "copyLink": "Copy guest link",
+    "linkCopied": "Link copied",
     "createSuccess": "Pass created for {guestName}.",
     "updateSuccess": "Pass updated.",
     "days": {
@@ -135,7 +136,12 @@
   },
   "guard": {
     "title": "Scan a guest pass",
-    "subtitle": "Point the camera at the guest's QR code.",
+    "subtitle": "Point the camera at the QR code, or paste the code below.",
+    "scanCamera": "Camera",
+    "pasteCode": "Paste code",
+    "pastePlaceholder": "Paste the code or link here",
+    "submit": "Check pass",
+    "checking": "Checking…",
     "allowed": "ALLOWED",
     "denied": "DENIED",
     "guestLabel": "Guest",
@@ -144,7 +150,8 @@
     "recentScans": "Recent scans",
     "cameraStart": "Start camera",
     "cameraStop": "Stop camera",
-    "cameraError": "We couldn't access the camera.",
+    "cameraError": "We couldn't access the camera. Use paste instead.",
+    "emptyCodeError": "Paste a code first.",
     "reasons": {
       "invalid_token": "This code isn't recognized.",
       "revoked": "This pass was revoked.",
@@ -196,7 +203,6 @@
       "unassignConfirm": "Remove {name} from this unit?",
       "selectResident": "Select a resident",
       "noResidentsAssigned": "No residents assigned to this unit yet.",
-      "noResidentEndpoint": "The resident directory isn't live on the backend yet, so residents can't be searched here — ask the backend team to ship GET /v1/users.",
       "detailTitle": "Unit {number}",
       "allBuildings": "All buildings"
     },
