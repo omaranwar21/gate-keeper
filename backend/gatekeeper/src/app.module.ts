@@ -8,8 +8,9 @@ import { GuestPassesModule } from './guest-passes/guest-passes.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UnitsModule } from './units/units.module';
 import { UsersModule } from './users/users.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { SuccessMessageInterceptor } from './i18n/success-message.interceptor';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -36,6 +37,10 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SuccessMessageInterceptor,
     },
   ],
 })

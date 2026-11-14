@@ -23,7 +23,7 @@ export class UnitsService {
       where: { id: dto.buildingId },
     });
     if (!building) {
-      throw new BadRequestException('Building not found');
+      throw new BadRequestException('buildings.notFound');
     }
     return this.prisma.unit.create({ data: dto }).catch((error) => {
       throw this.mapError(error);
@@ -63,7 +63,7 @@ export class UnitsService {
       },
     });
     if (!unit) {
-      throw new NotFoundException('Unit not found');
+      throw new NotFoundException('units.notFound');
     }
     return unit;
   }
@@ -91,10 +91,10 @@ export class UnitsService {
       where: { id: dto.userId },
     });
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new BadRequestException('users.notFound');
     }
     if (user.role !== Role.Resident) {
-      throw new BadRequestException('User is not a resident');
+      throw new BadRequestException('units.userNotResident');
     }
 
     return this.prisma.unitResident
@@ -128,7 +128,7 @@ export class UnitsService {
           error instanceof Prisma.PrismaClientKnownRequestError &&
           error.code === 'P2025'
         ) {
-          throw new NotFoundException('Resident is not assigned to this unit');
+          throw new NotFoundException('units.residentNotAssigned');
         }
         throw error;
       });
@@ -148,14 +148,10 @@ export class UnitsService {
   private mapError(error: unknown) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        return new ConflictException(
-          'This unit/resident combination already exists',
-        );
+        return new ConflictException('units.residentAlreadyAssigned');
       }
       if (error.code === 'P2003') {
-        return new ConflictException(
-          'Cannot delete a unit that still has related records',
-        );
+        return new ConflictException('units.hasRelatedRecords');
       }
     }
     return error;

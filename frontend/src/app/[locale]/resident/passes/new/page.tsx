@@ -67,7 +67,7 @@ export default function NewGuestPassPage() {
 
   function onSubmit(data: GuestPassFormInput) {
     const redirectOnSuccess = {
-      onSuccess: (pass: { id: string }) => router.push(`/resident/passes/${pass.id}`),
+      onSuccess: (response: { data: { id: string } }) => router.push(`/resident/passes/${response.data.id}`),
     };
     if (data.type === "one_time") {
       createMutation.mutate(

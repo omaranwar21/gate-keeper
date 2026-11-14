@@ -7,6 +7,7 @@ import type {
   PassStatus,
   Role,
   ScanResponse,
+  SuccessEnvelope,
   Unit,
   UnitWithResidents,
   User,
@@ -27,8 +28,10 @@ export interface UnitResidentEntry {
 // ---- auth -------------------------------------------------------
 
 export const authApi = {
+  // /api/auth/login (the Next.js route handler, not the backend directly)
+  // decodes the backend's envelope itself and re-shapes it flat.
   login: (data: { email: string; password: string }) =>
-    apiClient.post<{ role: Role }>("/auth/login", data).then((r) => r.data),
+    apiClient.post<{ role: Role; message: string }>("/auth/login", data).then((r) => r.data),
 };
 
 // ---- buildings -------------------------------------------------------
@@ -39,11 +42,11 @@ export const buildingsApi = {
       .get<PaginatedResult<Building>>("/buildings", { params: query })
       .then((r) => r.data),
   create: (data: { name: string }) =>
-    apiClient.post<Building>("/buildings", data).then((r) => r.data),
+    apiClient.post<SuccessEnvelope<Building>>("/buildings", data).then((r) => r.data),
   update: (id: string, data: { name?: string }) =>
-    apiClient.patch<Building>(`/buildings/${id}`, data).then((r) => r.data),
+    apiClient.patch<SuccessEnvelope<Building>>(`/buildings/${id}`, data).then((r) => r.data),
   remove: (id: string) =>
-    apiClient.delete(`/buildings/${id}`).then((r) => r.data),
+    apiClient.delete<{ message: string }>(`/buildings/${id}`).then((r) => r.data),
 };
 
 // ---- units -------------------------------------------------------
@@ -73,16 +76,19 @@ export const unitsApi = {
   getOne: (id: string) =>
     apiClient.get<UnitWithResidents>(`/units/${id}`).then((r) => r.data),
   create: (data: CreateUnitInput) =>
-    apiClient.post<Unit>("/units", data).then((r) => r.data),
+    apiClient.post<SuccessEnvelope<Unit>>("/units", data).then((r) => r.data),
   update: (id: string, data: { number?: string; floor?: number }) =>
-    apiClient.patch<Unit>(`/units/${id}`, data).then((r) => r.data),
-  remove: (id: string) => apiClient.delete(`/units/${id}`).then((r) => r.data),
+    apiClient.patch<SuccessEnvelope<Unit>>(`/units/${id}`, data).then((r) => r.data),
+  remove: (id: string) =>
+    apiClient.delete<{ message: string }>(`/units/${id}`).then((r) => r.data),
   assignResident: (id: string, userId: string) =>
     apiClient
-      .post<UnitResidentEntry>(`/units/${id}/residents`, { userId })
+      .post<SuccessEnvelope<UnitResidentEntry>>(`/units/${id}/residents`, { userId })
       .then((r) => r.data),
   unassignResident: (id: string, userId: string) =>
-    apiClient.delete(`/units/${id}/residents/${userId}`).then((r) => r.data),
+    apiClient
+      .delete<{ message: string }>(`/units/${id}/residents/${userId}`)
+      .then((r) => r.data),
 };
 
 // ---- guest passes -------------------------------------------------------
@@ -115,12 +121,13 @@ export const passesApi = {
   getOne: (id: string) =>
     apiClient.get<GuestPass>(`/passes/${id}`).then((r) => r.data),
   create: (data: CreateGuestPassInput) =>
-    apiClient.post<GuestPass>("/passes", data).then((r) => r.data),
+    apiClient.post<SuccessEnvelope<GuestPass>>("/passes", data).then((r) => r.data),
   update: (id: string, data: UpdateGuestPassInput) =>
-    apiClient.patch<GuestPass>(`/passes/${id}`, data).then((r) => r.data),
+    apiClient.patch<SuccessEnvelope<GuestPass>>(`/passes/${id}`, data).then((r) => r.data),
   revoke: (id: string) =>
-    apiClient.patch<GuestPass>(`/passes/${id}/revoke`).then((r) => r.data),
-  remove: (id: string) => apiClient.delete(`/passes/${id}`).then((r) => r.data),
+    apiClient.patch<SuccessEnvelope<GuestPass>>(`/passes/${id}/revoke`).then((r) => r.data),
+  remove: (id: string) =>
+    apiClient.delete<{ message: string }>(`/passes/${id}`).then((r) => r.data),
   scan: (token: string) =>
     apiClient.post<ScanResponse>("/passes/scan", { token }).then((r) => r.data),
 };

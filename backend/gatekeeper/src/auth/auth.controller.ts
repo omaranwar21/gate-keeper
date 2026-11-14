@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SuccessMessage } from '../i18n/success-message.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -11,6 +12,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @SuccessMessage('auth.loggedIn')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
   }

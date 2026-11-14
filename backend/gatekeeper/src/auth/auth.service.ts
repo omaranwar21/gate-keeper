@@ -21,7 +21,7 @@ export class AuthService {
 
   async createUser(dto: RegisterDto): Promise<Omit<User, 'passwordHash'>> {
     if (await this.usersService.findByEmail(dto.email)) {
-      throw new ConflictException('Email already in use');
+      throw new ConflictException('auth.emailInUse');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, SALT_ROUNDS);
@@ -60,7 +60,7 @@ export class AuthService {
   ): Promise<{ accessToken: string }> {
     const user = await this.validateUser(email, password);
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('auth.invalidCredentials');
     }
 
     const payload = { sub: user.id, email: user.email, role: user.role };

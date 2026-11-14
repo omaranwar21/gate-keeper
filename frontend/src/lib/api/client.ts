@@ -11,6 +11,14 @@ export const apiClient = axios.create({
   baseURL: "/api",
 });
 
+// Lets the backend translate error messages: the locale layout sets
+// <html lang>, so it's always in sync with the active [locale] segment.
+// The /api/* route handlers forward this header on to the real backend.
+apiClient.interceptors.request.use((config) => {
+  config.headers["Content-Language"] = document.documentElement.lang;
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

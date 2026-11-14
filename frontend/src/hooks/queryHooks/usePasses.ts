@@ -27,8 +27,10 @@ export function useCreatePass() {
 
   return useMutation({
     mutationFn: passesApi.create,
-    onSuccess: (pass) => {
-      toast.success(t("createSuccess", { guestName: pass.guestName }));
+    onSuccess: (response) => {
+      // Backend's createSuccess has no guest-name interpolation, so keep the
+      // frontend-rendered, personalized toast instead of response.message.
+      toast.success(t("createSuccess", { guestName: response.data.guestName }));
       queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
@@ -36,14 +38,13 @@ export function useCreatePass() {
 }
 
 export function useRevokePass() {
-  const t = useTranslations("passes");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => passesApi.revoke(id),
-    onSuccess: () => {
-      toast.success(t("revokeSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
@@ -51,14 +52,13 @@ export function useRevokePass() {
 }
 
 export function useDeletePass() {
-  const t = useTranslations("passes");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => passesApi.remove(id),
-    onSuccess: () => {
-      toast.success(t("deleteSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),

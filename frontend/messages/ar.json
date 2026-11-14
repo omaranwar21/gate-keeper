@@ -112,8 +112,6 @@
     "downloadQr": "تنزيل رمز QR",
     "shareQr": "مشاركة رمز QR",
     "createSuccess": "تم إنشاء تصريح لـ{guestName}.",
-    "revokeSuccess": "تم إلغاء التصريح.",
-    "deleteSuccess": "تم حذف التصريح.",
     "updateSuccess": "تم تحديث التصريح.",
     "days": {
       "0": "أحد",
@@ -175,9 +173,6 @@
       "namePlaceholder": "مثال: مبنى A",
       "empty": "لا توجد مبانٍ بعد",
       "emptyDesc": "أضف أول مبنى لتبدأ بإنشاء الوحدات.",
-      "createSuccess": "تم إنشاء المبنى.",
-      "updateSuccess": "تم تحديث المبنى.",
-      "deleteSuccess": "تم حذف المبنى.",
       "deleteConfirmTitle": "هل تريد حذف هذا المبنى؟",
       "deleteConfirmDesc": "يمكنك حذف المبنى فقط إذا لم تكن به أي وحدات.",
       "unitsCount": "{count} وحدة"
@@ -193,9 +188,6 @@
       "selectBuilding": "اختر مبنى",
       "empty": "لا توجد وحدات بعد",
       "emptyDesc": "أضف وحدة لهذا المبنى لتتمكن من تعيين سكّان لها.",
-      "createSuccess": "تم إنشاء الوحدة.",
-      "updateSuccess": "تم تحديث الوحدة.",
-      "deleteSuccess": "تم حذف الوحدة.",
       "deleteConfirmTitle": "هل تريد حذف هذه الوحدة؟",
       "deleteConfirmDesc": "لا يمكن التراجع عن هذا.",
       "residents": "السكان",
@@ -205,8 +197,6 @@
       "selectResident": "اختر ساكنًا",
       "noResidentsAssigned": "لم يتم تعيين أي ساكن لهذه الوحدة بعد.",
       "noResidentEndpoint": "دليل السكان غير مفعّل على الخادم بعد، لذا لا يمكن البحث عنهم هنا — اطلب من فريق الخادم إطلاق GET /v1/users.",
-      "assignSuccess": "تم تعيين الساكن.",
-      "unassignSuccess": "تمت إزالة الساكن.",
       "detailTitle": "الوحدة {number}",
       "allBuildings": "كل المباني"
     },

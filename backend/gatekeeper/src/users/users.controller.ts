@@ -7,6 +7,7 @@ import { CurrentRole } from '../auth/decorators/roles.decorator';
 import { Role } from '../users/role.enum';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import * as jwtStrategy from '../auth/strategies/jwt.strategy';
+import { SuccessMessage } from '../i18n/success-message.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -15,6 +16,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RoleGuard)
   @CurrentRole(Role.Admin)
   @Post('create')
+  @SuccessMessage('auth.userCreated')
   register(@Body() dto: RegisterDto) {
     return this.authService.createUser(dto);
   }

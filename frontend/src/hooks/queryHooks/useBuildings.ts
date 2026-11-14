@@ -14,14 +14,13 @@ export function useBuildingsList(query: PaginationQuery = {}) {
 }
 
 export function useCreateBuilding() {
-  const t = useTranslations("admin.buildings");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: buildingsApi.create,
-    onSuccess: () => {
-      toast.success(t("createSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.buildings.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
@@ -29,14 +28,13 @@ export function useCreateBuilding() {
 }
 
 export function useUpdateBuilding() {
-  const t = useTranslations("admin.buildings");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (vars: { id: string; data: BuildingFormInput }) => buildingsApi.update(vars.id, vars.data),
-    onSuccess: () => {
-      toast.success(t("updateSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.buildings.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
@@ -44,14 +42,13 @@ export function useUpdateBuilding() {
 }
 
 export function useDeleteBuilding() {
-  const t = useTranslations("admin.buildings");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => buildingsApi.remove(id),
-    onSuccess: () => {
-      toast.success(t("deleteSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.buildings.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),

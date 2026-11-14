@@ -112,8 +112,6 @@
     "downloadQr": "Download QR",
     "shareQr": "Share QR",
     "createSuccess": "Pass created for {guestName}.",
-    "revokeSuccess": "Pass revoked.",
-    "deleteSuccess": "Pass deleted.",
     "updateSuccess": "Pass updated.",
     "days": {
       "0": "Sun",
@@ -175,9 +173,6 @@
       "namePlaceholder": "e.g. Building A",
       "empty": "No buildings yet",
       "emptyDesc": "Add your first building to start creating units.",
-      "createSuccess": "Building created.",
-      "updateSuccess": "Building updated.",
-      "deleteSuccess": "Building deleted.",
       "deleteConfirmTitle": "Delete this building?",
       "deleteConfirmDesc": "You can only delete a building once it has no units.",
       "unitsCount": "{count} units"
@@ -193,9 +188,6 @@
       "selectBuilding": "Select a building",
       "empty": "No units yet",
       "emptyDesc": "Add a unit to this building to assign residents.",
-      "createSuccess": "Unit created.",
-      "updateSuccess": "Unit updated.",
-      "deleteSuccess": "Unit deleted.",
       "deleteConfirmTitle": "Delete this unit?",
       "deleteConfirmDesc": "This can't be undone.",
       "residents": "Residents",
@@ -205,8 +197,6 @@
       "selectResident": "Select a resident",
       "noResidentsAssigned": "No residents assigned to this unit yet.",
       "noResidentEndpoint": "The resident directory isn't live on the backend yet, so residents can't be searched here — ask the backend team to ship GET /v1/users.",
-      "assignSuccess": "Resident assigned.",
-      "unassignSuccess": "Resident removed.",
       "detailTitle": "Unit {number}",
       "allBuildings": "All buildings"
     },

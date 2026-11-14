@@ -28,14 +28,13 @@ export function useUnitDetail(id: string) {
 }
 
 export function useCreateUnit() {
-  const t = useTranslations("admin.units");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateUnitInput) => unitsApi.create(data),
-    onSuccess: () => {
-      toast.success(t("createSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
@@ -43,14 +42,13 @@ export function useCreateUnit() {
 }
 
 export function useUpdateUnit() {
-  const t = useTranslations("admin.units");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (vars: { id: string; data: Partial<UnitFormOutput> }) => unitsApi.update(vars.id, vars.data),
-    onSuccess: () => {
-      toast.success(t("updateSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
@@ -58,14 +56,13 @@ export function useUpdateUnit() {
 }
 
 export function useDeleteUnit() {
-  const t = useTranslations("admin.units");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => unitsApi.remove(id),
-    onSuccess: () => {
-      toast.success(t("deleteSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
@@ -73,14 +70,13 @@ export function useDeleteUnit() {
 }
 
 export function useAssignResident(unitId: string) {
-  const t = useTranslations("admin.units");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (userId: string) => unitsApi.assignResident(unitId, userId),
-    onSuccess: () => {
-      toast.success(t("assignSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.units.detail(unitId) });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
@@ -88,14 +84,13 @@ export function useAssignResident(unitId: string) {
 }
 
 export function useUnassignResident(unitId: string) {
-  const t = useTranslations("admin.units");
   const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (userId: string) => unitsApi.unassignResident(unitId, userId),
-    onSuccess: () => {
-      toast.success(t("unassignSuccess"));
+    onSuccess: (response) => {
+      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: queryKeys.units.detail(unitId) });
     },
     onError: (error) => toastApiError(error, tCommon("somethingWrong")),

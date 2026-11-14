@@ -10,6 +10,7 @@ import { AssignResidentDto } from './dto/assign-resident.dto';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
 import { UnitsService } from './units.service';
+import { SuccessMessage } from '../i18n/success-message.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller({ path: 'units', version: '1' })
@@ -26,6 +27,7 @@ export class UnitsController {
   @UseGuards(RoleGuard)
   @CurrentRole(Role.Admin)
   @Post()
+  @SuccessMessage('units.created')
   create(@Body() dto: CreateUnitDto) {
     return this.unitsService.create(dto);
   }
@@ -47,6 +49,7 @@ export class UnitsController {
   @UseGuards(RoleGuard)
   @CurrentRole(Role.Admin)
   @Patch(':id')
+  @SuccessMessage('units.updated')
   update(@Param('id') id: string, @Body() dto: UpdateUnitDto) {
     return this.unitsService.update(id, dto);
   }
@@ -54,6 +57,7 @@ export class UnitsController {
   @UseGuards(RoleGuard)
   @CurrentRole(Role.Admin)
   @Delete(':id')
+  @SuccessMessage('units.deleted')
   remove(@Param('id') id: string) {
     return this.unitsService.remove(id);
   }
@@ -61,6 +65,7 @@ export class UnitsController {
   @UseGuards(RoleGuard)
   @CurrentRole(Role.Admin)
   @Post(':id/residents')
+  @SuccessMessage('units.residentAssigned')
   assignResident(@Param('id') id: string, @Body() dto: AssignResidentDto) {
     return this.unitsService.assignResident(id, dto);
   }
@@ -68,6 +73,7 @@ export class UnitsController {
   @UseGuards(RoleGuard)
   @CurrentRole(Role.Admin)
   @Delete(':id/residents/:userId')
+  @SuccessMessage('units.residentUnassigned')
   unassignResident(@Param('id') id: string, @Param('userId') userId: string) {
     return this.unitsService.unassignResident(id, userId);
   }

@@ -1,0 +1,43 @@
+{
+  "auth": {
+    "emailInUse": "Email already in use",
+    "invalidCredentials": "Invalid email or password",
+    "loggedIn": "Logged in successfully",
+    "userCreated": "User created successfully"
+  },
+  "buildings": {
+    "notFound": "Building not found",
+    "nameTaken": "A building with this name already exists",
+    "hasUnits": "Cannot delete a building that still has units",
+    "created": "Building created",
+    "updated": "Building updated",
+    "deleted": "Building deleted"
+  },
+  "units": {
+    "notFound": "Unit not found",
+    "userNotResident": "User is not a resident",
+    "residentNotAssigned": "Resident is not assigned to this unit",
+    "residentAlreadyAssigned": "This unit/resident combination already exists",
+    "hasRelatedRecords": "Cannot delete a unit that still has related records",
+    "created": "Unit created",
+    "updated": "Unit updated",
+    "deleted": "Unit deleted",
+    "residentAssigned": "Resident assigned",
+    "residentUnassigned": "Resident unassigned"
+  },
+  "users": {
+    "notFound": "User not found"
+  },
+  "guestPasses": {
+    "notFound": "Pass not found",
+    "validWindowInvalid": "validUntil must be after validFrom",
+    "dailyWindowInvalid": "dailyStartMin must be before dailyEndMin",
+    "cannotUpdateRevokedOrUsed": "Cannot update a revoked or already-used pass",
+    "recurringFieldsOnly": "daysOfWeek/dailyStartMin/dailyEndMin only apply to recurring passes",
+    "alreadyRevoked": "Pass is already revoked",
+    "created": "Guest pass created",
+    "updated": "Guest pass updated",
+    "revoked": "Guest pass revoked",
+    "deleted": "Guest pass deleted"
+  }
+}

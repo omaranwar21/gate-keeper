@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { backendApi, authHeader } from "@/lib/api/backend";
+import { NextResponse, type NextRequest } from "next/server";
+import { backendApi, authHeader, contentLanguageHeader } from "@/lib/api/backend";
 import { getSessionToken } from "@/lib/auth/session";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const token = await getSessionToken();
 
   if (!token) {
@@ -13,7 +13,10 @@ export async function GET() {
   }
 
   const backendResponse = await backendApi.get("/users/profile", {
-    headers: authHeader(token),
+    headers: {
+      ...authHeader(token),
+      ...contentLanguageHeader(request.headers.get("content-language")),
+    },
   });
 
   return NextResponse.json(backendResponse.data, { status: backendResponse.status });

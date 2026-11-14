@@ -113,6 +113,14 @@ export interface ApiErrorBody {
   error: string;
 }
 
+/** Envelope the backend wraps mutation responses in: `data` is the created/
+ * updated resource, `message` is a success message translated per the
+ * request's Content-Language header. */
+export interface SuccessEnvelope<T> {
+  data: T;
+  message: string;
+}
+
 export interface ScanResponse {
   result: ScanResult;
   reason: DenyReason | null;

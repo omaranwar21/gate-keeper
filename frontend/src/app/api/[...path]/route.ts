@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { backendApi, authHeader } from "@/lib/api/backend";
+import { backendApi, authHeader, contentLanguageHeader } from "@/lib/api/backend";
 import { getSessionToken } from "@/lib/auth/session";
 
 async function proxy(request: NextRequest, segments: string[]) {
@@ -14,7 +14,10 @@ async function proxy(request: NextRequest, segments: string[]) {
     url: `/${path}${search}`,
     method: request.method,
     data: body,
-    headers: authHeader(token),
+    headers: {
+      ...authHeader(token),
+      ...contentLanguageHeader(request.headers.get("content-language")),
+    },
   });
 
   return NextResponse.json(backendResponse.data, { status: backendResponse.status });

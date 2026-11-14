@@ -14,3 +14,9 @@ export const backendApi = axios.create({
 export function authHeader(token: string | null) {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
+
+/** Forwards the browser's Content-Language header on to the backend, which
+ * uses it to translate error messages. */
+export function contentLanguageHeader(contentLanguage: string | null) {
+  return contentLanguage ? { "Content-Language": contentLanguage } : {};
+}

@@ -35,13 +35,13 @@ export class GuestPassesService {
     const validFrom = new Date(dto.validFrom);
     const validUntil = new Date(dto.validUntil);
     if (validUntil <= validFrom) {
-      throw new BadRequestException('validUntil must be after validFrom');
+      throw new BadRequestException('guestPasses.validWindowInvalid');
     }
     if (
       dto.type === PassType.recurring &&
       dto.dailyStartMin! >= dto.dailyEndMin!
     ) {
-      throw new BadRequestException('dailyStartMin must be before dailyEndMin');
+      throw new BadRequestException('guestPasses.dailyWindowInvalid');
     }
 
     const data = {
@@ -79,18 +79,16 @@ export class GuestPassesService {
   ) {
     const pass = await this.prisma.guestPass.findUnique({ where: { id } });
     if (!pass) {
-      throw new NotFoundException('Pass not found');
+      throw new NotFoundException('guestPasses.notFound');
     }
     if (
       requester.role !== Role.Admin &&
       !(await this.residentBelongsToUnit(requester.sub, pass.unitId))
     ) {
-      throw new NotFoundException('Pass not found');
+      throw new NotFoundException('guestPasses.notFound');
     }
     if (pass.revokedAt || (pass.type === PassType.one_time && pass.usedAt)) {
-      throw new ConflictException(
-        'Cannot update a revoked or already-used pass',
-      );
+      throw new ConflictException('guestPasses.cannotUpdateRevokedOrUsed');
     }
     if (
       (dto.daysOfWeek ||
@@ -98,9 +96,7 @@ export class GuestPassesService {
         dto.dailyEndMin !== undefined) &&
       pass.type !== PassType.recurring
     ) {
-      throw new BadRequestException(
-        'daysOfWeek/dailyStartMin/dailyEndMin only apply to recurring passes',
-      );
+      throw new BadRequestException('guestPasses.recurringFieldsOnly');
     }
 
     const validFrom = dto.validFrom ? new Date(dto.validFrom) : pass.validFrom;
@@ -108,7 +104,7 @@ export class GuestPassesService {
       ? new Date(dto.validUntil)
       : pass.validUntil;
     if (validUntil <= validFrom) {
-      throw new BadRequestException('validUntil must be after validFrom');
+      throw new BadRequestException('guestPasses.validWindowInvalid');
     }
 
     const dailyStartMin = dto.dailyStartMin ?? pass.dailyStartMin;
@@ -119,7 +115,7 @@ export class GuestPassesService {
       dailyEndMin !== null &&
       dailyStartMin >= dailyEndMin
     ) {
-      throw new BadRequestException('dailyStartMin must be before dailyEndMin');
+      throw new BadRequestException('guestPasses.dailyWindowInvalid');
     }
 
     return this.prisma.guestPass.update({
@@ -139,14 +135,14 @@ export class GuestPassesService {
   async remove(requester: { sub: string; role: Role }, id: string) {
     const pass = await this.prisma.guestPass.findUnique({ where: { id } });
     if (!pass) {
-      throw new NotFoundException('Pass not found');
+      throw new NotFoundException('guestPasses.notFound');
     }
     if (
       requester.role !== Role.Admin &&
       !(await this.residentBelongsToUnit(requester.sub, pass.unitId))
     ) {
       // Same 404 whether the pass doesn't exist or just isn't this resident's.
-      throw new NotFoundException('Pass not found');
+      throw new NotFoundException('guestPasses.notFound');
     }
 
     // Hard delete, unlike revoke: AccessLog.passId is onDelete: SetNull in the
@@ -225,7 +221,7 @@ export class GuestPassesService {
     if (!pass || !(await this.residentBelongsToUnit(residentId, pass.unitId))) {
       // Same 404 whether the pass doesn't exist or just isn't this resident's —
       // never confirm another unit's pass exists.
-      throw new NotFoundException('Pass not found');
+      throw new NotFoundException('guestPasses.notFound');
     }
 
     return { ...pass, status: derivePassStatus(pass, new Date()) };
@@ -234,16 +230,16 @@ export class GuestPassesService {
   async revoke(requester: { sub: string; role: Role }, id: string) {
     const pass = await this.prisma.guestPass.findUnique({ where: { id } });
     if (!pass) {
-      throw new NotFoundException('Pass not found');
+      throw new NotFoundException('guestPasses.notFound');
     }
     if (
       requester.role !== Role.Admin &&
       !(await this.residentBelongsToUnit(requester.sub, pass.unitId))
     ) {
-      throw new NotFoundException('Pass not found');
+      throw new NotFoundException('guestPasses.notFound');
     }
     if (pass.revokedAt) {
-      throw new ConflictException('Pass is already revoked');
+      throw new ConflictException('guestPasses.alreadyRevoked');
     }
 
     return this.prisma.guestPass.update({
@@ -365,7 +361,7 @@ export class GuestPassesService {
   private async assertResidentBelongsToUnit(userId: string, unitId: string) {
     if (!(await this.residentBelongsToUnit(userId, unitId))) {
       // Don't distinguish "unit doesn't exist" from "not yours" either.
-      throw new NotFoundException('Unit not found');
+      throw new NotFoundException('units.notFound');
     }
   }
 

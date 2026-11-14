@@ -20,6 +20,7 @@ import { FindMyPassesQueryDto } from './dto/find-my-passes-query.dto';
 import { ScanPassDto } from './dto/scan-pass.dto';
 import { UpdateGuestPassDto } from './dto/update-guest-pass.dto';
 import { GuestPassesService } from './guest-passes.service';
+import { SuccessMessage } from '../i18n/success-message.decorator';
 
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('passes')
@@ -28,6 +29,7 @@ export class GuestPassesController {
 
   @CurrentRole(Role.Resident)
   @Post()
+  @SuccessMessage('guestPasses.created')
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateGuestPassDto) {
     return this.guestPassesService.create(user.sub, dto);
   }
@@ -49,6 +51,7 @@ export class GuestPassesController {
 
   @CurrentRole(Role.Resident, Role.Admin)
   @Patch(':id')
+  @SuccessMessage('guestPasses.updated')
   update(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
@@ -59,12 +62,14 @@ export class GuestPassesController {
 
   @CurrentRole(Role.Resident, Role.Admin)
   @Patch(':id/revoke')
+  @SuccessMessage('guestPasses.revoked')
   revoke(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.guestPassesService.revoke(user, id);
   }
 
   @CurrentRole(Role.Resident, Role.Admin)
   @Delete(':id')
+  @SuccessMessage('guestPasses.deleted')
   remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.guestPassesService.remove(user, id);
   }

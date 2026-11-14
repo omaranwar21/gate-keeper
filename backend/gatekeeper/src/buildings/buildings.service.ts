@@ -24,7 +24,7 @@ export class BuildingsService {
   async findOne(id: string) {
     const building = await this.prisma.building.findUnique({ where: { id } });
     if (!building) {
-      throw new NotFoundException('Building not found');
+      throw new NotFoundException('buildings.notFound');
     }
     return building;
   }
@@ -46,10 +46,10 @@ export class BuildingsService {
   private mapError(error: unknown) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        return new ConflictException('A building with this name already exists');
+        return new ConflictException('buildings.nameTaken');
       }
       if (error.code === 'P2003') {
-        return new ConflictException('Cannot delete a building that still has units');
+        return new ConflictException('buildings.hasUnits');
       }
     }
     return error;
