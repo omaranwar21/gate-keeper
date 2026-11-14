@@ -1,0 +1,159 @@
+"use client";
+
+import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, QrCode, Ban, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/design-system/page-header";
+import { DataTable, type DataTableColumn } from "@/components/design-system/data-table";
+import { StatusBadge } from "@/components/design-system/status-badge";
+import { ConfirmDialog } from "@/components/design-system/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
+import { passesApi } from "@/lib/api/endpoints";
+import { queryKeys } from "@/lib/query/keys";
+import { passStatusTone } from "@/lib/status";
+import { passWindowSummary } from "@/lib/pass-summary";
+import { toast } from "sonner";
+import type { GuestPass, PassStatus } from "@/types/api";
+
+export default function ResidentPassesPage() {
+  const t = useTranslations("passes");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [revokeTarget, setRevokeTarget] = useState<GuestPass | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GuestPass | null>(null);
+
+  const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((d) => t(`days.${d}`));
+
+  const query = useQuery({
+    queryKey: queryKeys.passes.mine({ page }),
+    queryFn: () => passesApi.listMine({ page }),
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: (id: string) => passesApi.revoke(id),
+    onSuccess: () => {
+      toast.success(t("revokeSuccess"));
+      queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
+      setRevokeTarget(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => passesApi.remove(id),
+    onSuccess: () => {
+      toast.success(t("deleteSuccess"));
+      queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
+      setDeleteTarget(null);
+    },
+  });
+
+  const columns: DataTableColumn<GuestPass>[] = [
+    {
+      key: "guestName",
+      header: t("guestName"),
+      cell: (pass) => (
+        <Link href={`/resident/passes/${pass.id}`} className="font-medium text-foreground hover:underline">
+          {pass.guestName}
+        </Link>
+      ),
+    },
+    {
+      key: "type",
+      header: t("type"),
+      cell: (pass) => (pass.type === "one_time" ? t("oneTime") : t("recurring")),
+    },
+    {
+      key: "window",
+      header: t("validFrom"),
+      cell: (pass) => (
+        <span className="text-sm text-muted-foreground">{passWindowSummary(pass, locale, dayLabels)}</span>
+      ),
+    },
+    {
+      key: "status",
+      header: tCommon("status"),
+      cell: (pass) => <StatusBadge tone={passStatusTone(pass.status as PassStatus)}>{t(`status.${pass.status}`)}</StatusBadge>,
+    },
+    {
+      key: "actions",
+      header: tCommon("actions"),
+      headerClassName: "text-end",
+      className: "text-end",
+      cell: (pass) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/resident/passes/${pass.id}`} aria-label={t("qrTitle")}>
+              <QrCode className="size-4" />
+            </Link>
+          </Button>
+          {pass.status === "active" && (
+            <Button variant="ghost" size="icon" onClick={() => setRevokeTarget(pass)} aria-label={t("revoke")}>
+              <Ban className="size-4 text-danger" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(pass)} aria-label={tCommon("delete")}>
+            <Trash2 className="size-4 text-muted-foreground" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          <Button asChild>
+            <Link href="/resident/passes/new">
+              <Plus className="size-4" />
+              {t("newPass")}
+            </Link>
+          </Button>
+        }
+      />
+
+      <DataTable
+        columns={columns}
+        data={query.data?.data}
+        rowKey={(pass) => pass.id}
+        isLoading={query.isLoading}
+        isError={query.isError}
+        onRetry={() => query.refetch()}
+        errorTitle={tCommon("somethingWrong")}
+        meta={query.data?.meta}
+        onPageChange={setPage}
+        emptyTitle={t("empty")}
+        emptyDescription={t("emptyDesc")}
+        emptyAction={
+          <Button asChild size="sm">
+            <Link href="/resident/passes/new">{t("newPass")}</Link>
+          </Button>
+        }
+      />
+
+      <ConfirmDialog
+        open={Boolean(revokeTarget)}
+        onOpenChange={(open) => !open && setRevokeTarget(null)}
+        title={t("revokeConfirmTitle")}
+        description={t("revokeConfirmDesc", { guestName: revokeTarget?.guestName ?? "" })}
+        onConfirm={() => revokeTarget && revokeMutation.mutate(revokeTarget.id)}
+        isPending={revokeMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={t("deleteConfirmTitle")}
+        description={t("deleteConfirmDesc")}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        isPending={deleteMutation.isPending}
+      />
+    </div>
+  );
+}

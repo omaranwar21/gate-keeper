@@ -79,6 +79,10 @@ pids/
 # ---------- Local-only notes (draft README content, not committed) ----------
 NOTES.local.md
 prisma-guide.pdf
+.agents
+skills-lock.json
+.claude
+frontend/AGENTS.md
 
 # ---------- OS ----------
 .DS_Store
