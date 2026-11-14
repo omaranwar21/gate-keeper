@@ -15,7 +15,6 @@ import { UnitsService } from './units.service';
 export class UnitsController {
   constructor(private readonly unitsService: UnitsService) {}
 
-  // Must come before ':id' so Nest doesn't try to match "mine" as an id param.
   @UseGuards(RoleGuard)
   @CurrentRole(Role.Resident)
   @Get('mine')
