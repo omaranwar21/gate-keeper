@@ -6,11 +6,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentRole } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
+import { PaginationQueryDto } from '../shared/dto/pagination-query.dto';
 import { Role } from '../users/role.enum';
 import { BuildingsService } from './buildings.service';
 import { CreateBuildingDto } from './dto/create-building.dto';
@@ -28,8 +30,8 @@ export class BuildingsController {
   }
 
   @Get()
-  findAll() {
-    return this.buildingsService.findAll();
+  findAll(@Query() pagination: PaginationQueryDto) {
+    return this.buildingsService.findAll(pagination);
   }
 
   @Get(':id')

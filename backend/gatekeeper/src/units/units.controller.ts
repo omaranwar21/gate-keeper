@@ -4,6 +4,7 @@ import { CurrentRole } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import type { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PaginationQueryDto } from '../shared/dto/pagination-query.dto';
 import { Role } from '../users/role.enum';
 import { AssignResidentDto } from './dto/assign-resident.dto';
 import { CreateUnitDto } from './dto/create-unit.dto';
@@ -18,8 +19,8 @@ export class UnitsController {
   @UseGuards(RoleGuard)
   @CurrentRole(Role.Resident)
   @Get('mine')
-  findMine(@CurrentUser() user: JwtPayload) {
-    return this.unitsService.findMyUnits(user.sub);
+  findMine(@CurrentUser() user: JwtPayload, @Query() pagination: PaginationQueryDto) {
+    return this.unitsService.findMyUnits(user.sub, pagination);
   }
 
   @UseGuards(RoleGuard)
@@ -32,8 +33,8 @@ export class UnitsController {
   @UseGuards(RoleGuard)
   @CurrentRole(Role.Admin)
   @Get()
-  findAll(@Query('buildingId') buildingId?: string) {
-    return this.unitsService.findAll(buildingId);
+  findAll(@Query('buildingId') buildingId?: string, @Query() pagination?: PaginationQueryDto) {
+    return this.unitsService.findAll(buildingId, pagination);
   }
 
   @UseGuards(RoleGuard)

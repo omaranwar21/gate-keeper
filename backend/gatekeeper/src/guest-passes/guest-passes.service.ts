@@ -8,6 +8,7 @@ import {
 import { Prisma } from '../generated/prisma/client';
 import { DenyReason, PassType, ScanResult } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaginateOptions, paginator } from '../shared/utils/pagination';
 import { Role } from '../users/role.enum';
 import { CreateGuestPassDto } from './dto/create-guest-pass.dto';
 import { ScanPassDto } from './dto/scan-pass.dto';
@@ -16,6 +17,7 @@ import { derivePassStatus, validatePassForScan } from './pass-validation';
 
 const TOKEN_BYTES = 24;
 const MAX_TOKEN_ATTEMPTS = 3;
+const paginate = paginator({ perPage: 10 });
 
 @Injectable()
 export class GuestPassesService {
@@ -147,14 +149,14 @@ export class GuestPassesService {
     await this.prisma.guestPass.delete({ where: { id } });
   }
 
-  async findMine(residentId: string) {
+  async findMine(residentId: string, options?: PaginateOptions) {
     const memberships = await this.prisma.unitResident.findMany({
       where: { userId: residentId },
       select: { unitId: true },
     });
     const unitIds = memberships.map((m) => m.unitId);
 
-    const passes = await this.prisma.guestPass.findMany({
+    const findManyArgs = {
       where: { unitId: { in: unitIds } },
       include: {
         unit: { include: { building: true } },
@@ -169,13 +171,18 @@ export class GuestPassesService {
         },
       },
       orderBy: { createdAt: 'desc' },
-    });
+    } satisfies Prisma.GuestPassFindManyArgs;
+
+    const result = await paginate<
+      Prisma.GuestPassGetPayload<{ include: typeof findManyArgs.include }>,
+      typeof findManyArgs
+    >(this.prisma.guestPass, findManyArgs, options);
 
     const now = new Date();
-    return passes.map((pass) => ({
-      ...pass,
-      status: derivePassStatus(pass, now),
-    }));
+    return {
+      ...result,
+      data: result.data.map((pass) => ({ ...pass, status: derivePassStatus(pass, now) })),
+    };
   }
 
   async findOneForResident(residentId: string, id: string) {

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -13,6 +14,7 @@ import { CurrentRole } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import type { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PaginationQueryDto } from '../shared/dto/pagination-query.dto';
 import { Role } from '../users/role.enum';
 import { CreateGuestPassDto } from './dto/create-guest-pass.dto';
 import { ScanPassDto } from './dto/scan-pass.dto';
@@ -32,8 +34,8 @@ export class GuestPassesController {
 
   @CurrentRole(Role.Resident)
   @Get('mine')
-  findMine(@CurrentUser() user: JwtPayload) {
-    return this.guestPassesService.findMine(user.sub);
+  findMine(@CurrentUser() user: JwtPayload, @Query() pagination: PaginationQueryDto) {
+    return this.guestPassesService.findMine(user.sub, pagination);
   }
 
   @CurrentRole(Role.Resident)

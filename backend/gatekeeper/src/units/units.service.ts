@@ -6,10 +6,13 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaginateOptions, paginator } from '../shared/utils/pagination';
 import { Role } from '../users/role.enum';
 import { AssignResidentDto } from './dto/assign-resident.dto';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
+
+const paginate = paginator({ perPage: 10 });
 
 @Injectable()
 export class UnitsService {
@@ -27,12 +30,16 @@ export class UnitsService {
     });
   }
 
-  findAll(buildingId?: string) {
-    return this.prisma.unit.findMany({
-      where: buildingId ? { buildingId } : undefined,
-      include: { building: true },
-      orderBy: [{ buildingId: 'asc' }, { number: 'asc' }],
-    });
+  findAll(buildingId?: string, options?: PaginateOptions) {
+    return paginate(
+      this.prisma.unit,
+      {
+        where: buildingId ? { buildingId } : undefined,
+        include: { building: true },
+        orderBy: [{ buildingId: 'asc' }, { number: 'asc' }],
+      },
+      options,
+    );
   }
 
   async findOne(id: string) {
@@ -127,11 +134,15 @@ export class UnitsService {
       });
   }
 
-  findMyUnits(userId: string) {
-    return this.prisma.unitResident.findMany({
-      where: { userId },
-      include: { unit: { include: { building: true } } },
-    });
+  findMyUnits(userId: string, options?: PaginateOptions) {
+    return paginate(
+      this.prisma.unitResident,
+      {
+        where: { userId },
+        include: { unit: { include: { building: true } } },
+      },
+      options,
+    );
   }
 
   private mapError(error: unknown) {

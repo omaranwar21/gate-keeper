@@ -1,8 +1,11 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaginateOptions, paginator } from '../shared/utils/pagination';
 import { CreateBuildingDto } from './dto/create-building.dto';
 import { UpdateBuildingDto } from './dto/update-building.dto';
+
+const paginate = paginator({ perPage: 10 });
 
 @Injectable()
 export class BuildingsService {
@@ -14,8 +17,8 @@ export class BuildingsService {
     });
   }
 
-  findAll() {
-    return this.prisma.building.findMany({ orderBy: { name: 'asc' } });
+  findAll(options?: PaginateOptions) {
+    return paginate(this.prisma.building, { orderBy: { name: 'asc' } }, options);
   }
 
   async findOne(id: string) {
