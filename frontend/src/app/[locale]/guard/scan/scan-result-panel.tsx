@@ -5,6 +5,7 @@ import type { ScanResponse } from "@/types/api";
 
 export function ScanResultPanel({ response }: { response: ScanResponse }) {
   const t = useTranslations("guard");
+  const tCommon = useTranslations("common");
   const allowed = response.result === "allowed";
 
   return (
@@ -24,7 +25,12 @@ export function ScanResultPanel({ response }: { response: ScanResponse }) {
       {response.guestName && (
         <div className="mt-2 w-full max-w-xs space-y-1 rounded-2xl bg-black/10 px-4 py-3 text-start">
           <Detail label={t("guestLabel")} value={response.guestName} />
-          {response.unit && <Detail label={t("unitLabel")} value={response.unit.number} />}
+          {response.unit && (
+            <>
+              <Detail label={tCommon("building")} value={response.unit.building.name} />
+              <Detail label={t("unitLabel")} value={response.unit.number} />
+            </>
+          )}
         </div>
       )}
     </div>

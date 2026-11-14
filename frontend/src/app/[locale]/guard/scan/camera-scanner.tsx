@@ -16,6 +16,12 @@ export function CameraScanner({ onScan, disabled }: { onScan: (token: string) =>
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
+  // Html5Qrcode calls the decode callback on every scanned frame (~10/s) for
+  // as long as the same code is in view, so without a lock a single hold of
+  // the QR code in front of the camera fires onScan — and the scan mutation
+  // — many times over. Only the first decode per "armed" scanner gets through;
+  // re-armed once the parent is done processing it (disabled -> false).
+  const lockedRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -23,8 +29,13 @@ export function CameraScanner({ onScan, disabled }: { onScan: (token: string) =>
     };
   }, []);
 
+  useEffect(() => {
+    if (!disabled) lockedRef.current = false;
+  }, [disabled]);
+
   async function start() {
     setError(false);
+    lockedRef.current = false;
     const scanner = new Html5Qrcode(READER_ID);
     scannerRef.current = scanner;
 
@@ -33,6 +44,8 @@ export function CameraScanner({ onScan, disabled }: { onScan: (token: string) =>
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 240, height: 240 } },
         (decodedText) => {
+          if (lockedRef.current) return;
+          lockedRef.current = true;
           onScanRef.current(decodedText);
         },
         () => {},

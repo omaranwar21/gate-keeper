@@ -1,3 +1,4 @@
+import { Prisma } from '../generated/prisma/client';
 import { DenyReason, PassType } from '../generated/prisma/enums';
 
 const CAIRO_TIME_ZONE = 'Africa/Cairo';
@@ -93,6 +94,12 @@ export function validatePassForScan(
 }
 
 export type PassStatus = 'active' | 'used' | 'expired' | 'revoked';
+export const PASS_STATUSES: PassStatus[] = [
+  'active',
+  'used',
+  'expired',
+  'revoked',
+];
 
 // Display status for the resident's pass list — derived, never stored.
 export function derivePassStatus(
@@ -103,4 +110,37 @@ export function derivePassStatus(
   if (pass.type === PassType.one_time && pass.usedAt) return 'used';
   if (now > pass.validUntil) return 'expired';
   return 'active';
+}
+
+// DB-query counterpart to derivePassStatus, for filtering at the Prisma level
+// instead of in memory (pagination totals need to match). Keep the branches
+// in sync with derivePassStatus's precedence: revoked > used > expired > active.
+export function passStatusWhereClause(
+  status: PassStatus,
+  now: Date,
+): Prisma.GuestPassWhereInput {
+  const notUsedOneTime: Prisma.GuestPassWhereInput = {
+    OR: [{ type: { not: PassType.one_time } }, { usedAt: null }],
+  };
+
+  switch (status) {
+    case 'revoked':
+      return { revokedAt: { not: null } };
+    case 'used':
+      return { revokedAt: null, type: PassType.one_time, usedAt: { not: null } };
+    case 'expired':
+      return { revokedAt: null, validUntil: { lt: now }, ...notUsedOneTime };
+    case 'active':
+      return { revokedAt: null, validUntil: { gte: now }, ...notUsedOneTime };
+  }
+}
+
+// Start (inclusive) / end (exclusive) of "now"'s calendar day in Cairo local
+// time, as UTC instants. Cairo currently has no DST, so subtracting the
+// local minute-of-day from `now` lands exactly on local midnight.
+export function cairoDayBounds(now: Date): { start: Date; end: Date } {
+  const { minuteOfDay } = cairoLocalMinutes(now);
+  const start = new Date(now.getTime() - minuteOfDay * 60_000);
+  const end = new Date(start.getTime() + 24 * 60 * 60_000);
+  return { start, end };
 }

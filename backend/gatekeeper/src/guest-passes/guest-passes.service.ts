@@ -13,7 +13,13 @@ import { Role } from '../users/role.enum';
 import { CreateGuestPassDto } from './dto/create-guest-pass.dto';
 import { ScanPassDto } from './dto/scan-pass.dto';
 import { UpdateGuestPassDto } from './dto/update-guest-pass.dto';
-import { derivePassStatus, validatePassForScan } from './pass-validation';
+import {
+  cairoDayBounds,
+  derivePassStatus,
+  passStatusWhereClause,
+  PassStatus,
+  validatePassForScan,
+} from './pass-validation';
 
 const TOKEN_BYTES = 24;
 const MAX_TOKEN_ATTEMPTS = 3;
@@ -149,15 +155,30 @@ export class GuestPassesService {
     await this.prisma.guestPass.delete({ where: { id } });
   }
 
-  async findMine(residentId: string, options?: PaginateOptions) {
+  async findMine(
+    residentId: string,
+    options?: PaginateOptions & { status?: PassStatus; today?: boolean },
+  ) {
     const memberships = await this.prisma.unitResident.findMany({
       where: { userId: residentId },
       select: { unitId: true },
     });
     const unitIds = memberships.map((m) => m.unitId);
 
+    const now = new Date();
+    const conditions: Prisma.GuestPassWhereInput[] = [
+      { unitId: { in: unitIds } },
+    ];
+    if (options?.status) {
+      conditions.push(passStatusWhereClause(options.status, now));
+    }
+    if (options?.today) {
+      const { start, end } = cairoDayBounds(now);
+      conditions.push({ validFrom: { lt: end }, validUntil: { gte: start } });
+    }
+
     const findManyArgs = {
-      where: { unitId: { in: unitIds } },
+      where: { AND: conditions },
       include: {
         unit: { include: { building: true } },
         revokedBy: {
@@ -178,7 +199,6 @@ export class GuestPassesService {
       typeof findManyArgs
     >(this.prisma.guestPass, findManyArgs, options);
 
-    const now = new Date();
     return {
       ...result,
       data: result.data.map((pass) => ({ ...pass, status: derivePassStatus(pass, now) })),

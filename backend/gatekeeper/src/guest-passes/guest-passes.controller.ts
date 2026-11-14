@@ -14,9 +14,9 @@ import { CurrentRole } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import type { JwtPayload } from '../auth/strategies/jwt.strategy';
-import { PaginationQueryDto } from '../shared/dto/pagination-query.dto';
 import { Role } from '../users/role.enum';
 import { CreateGuestPassDto } from './dto/create-guest-pass.dto';
+import { FindMyPassesQueryDto } from './dto/find-my-passes-query.dto';
 import { ScanPassDto } from './dto/scan-pass.dto';
 import { UpdateGuestPassDto } from './dto/update-guest-pass.dto';
 import { GuestPassesService } from './guest-passes.service';
@@ -34,8 +34,11 @@ export class GuestPassesController {
 
   @CurrentRole(Role.Resident)
   @Get('mine')
-  findMine(@CurrentUser() user: JwtPayload, @Query() pagination: PaginationQueryDto) {
-    return this.guestPassesService.findMine(user.sub, pagination);
+  findMine(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: FindMyPassesQueryDto,
+  ) {
+    return this.guestPassesService.findMine(user.sub, query);
   }
 
   @CurrentRole(Role.Resident)

@@ -5,7 +5,14 @@ import { useLocale, useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, QrCode, Ban, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
-import { DataTable, type DataTableColumn } from "@/components/design-system/data-table";
+import {
+  DataTable,
+  type DataTableColumn,
+} from "@/components/design-system/data-table";
+import {
+  FilterBar,
+  type FilterConfig,
+} from "@/components/design-system/filter-bar";
 import { StatusBadge } from "@/components/design-system/status-badge";
 import { ConfirmDialog } from "@/components/design-system/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -23,15 +30,48 @@ export default function ResidentPassesPage() {
   const locale = useLocale();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [status, setStatus] = useState<string>();
+  const [today, setToday] = useState<string>();
   const [revokeTarget, setRevokeTarget] = useState<GuestPass | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<GuestPass | null>(null);
 
   const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((d) => t(`days.${d}`));
 
   const query = useQuery({
-    queryKey: queryKeys.passes.mine({ page }),
-    queryFn: () => passesApi.listMine({ page }),
+    queryKey: queryKeys.passes.mine({ page, status, today }),
+    queryFn: () =>
+      passesApi.listMine({
+        page,
+        status: status as PassStatus | undefined,
+        today: today === "true" ? true : undefined,
+      }),
   });
+
+  const filters: FilterConfig[] = [
+    {
+      key: "status",
+      type: "select",
+      label: tCommon("status"),
+      options: (["active", "used", "expired", "revoked"] as PassStatus[]).map(
+        (value) => ({
+          value,
+          label: t(`status.${value}`),
+        }),
+      ),
+    },
+    {
+      key: "today",
+      type: "select",
+      label: tCommon("today"),
+      options: [{ value: "true", label: tCommon("today") }],
+    },
+  ];
+
+  function handleFilterChange(key: string, value: string | undefined) {
+    setPage(1);
+    if (key === "status") setStatus(value);
+    if (key === "today") setToday(value);
+  }
 
   const revokeMutation = useMutation({
     mutationFn: (id: string) => passesApi.revoke(id),
@@ -56,7 +96,10 @@ export default function ResidentPassesPage() {
       key: "guestName",
       header: t("guestName"),
       cell: (pass) => (
-        <Link href={`/resident/passes/${pass.id}`} className="font-medium text-foreground hover:underline">
+        <Link
+          href={`/resident/passes/${pass.id}`}
+          className="font-medium text-foreground hover:underline"
+        >
           {pass.guestName}
         </Link>
       ),
@@ -64,19 +107,26 @@ export default function ResidentPassesPage() {
     {
       key: "type",
       header: t("type"),
-      cell: (pass) => (pass.type === "one_time" ? t("oneTime") : t("recurring")),
+      cell: (pass) =>
+        pass.type === "one_time" ? t("oneTime") : t("recurring"),
     },
     {
       key: "window",
       header: t("validFrom"),
       cell: (pass) => (
-        <span className="text-sm text-muted-foreground">{passWindowSummary(pass, locale, dayLabels)}</span>
+        <span className="text-sm text-muted-foreground">
+          {passWindowSummary(pass, locale, dayLabels)}
+        </span>
       ),
     },
     {
       key: "status",
       header: tCommon("status"),
-      cell: (pass) => <StatusBadge tone={passStatusTone(pass.status as PassStatus)}>{t(`status.${pass.status}`)}</StatusBadge>,
+      cell: (pass) => (
+        <StatusBadge tone={passStatusTone(pass.status as PassStatus)}>
+          {t(`status.${pass.status}`)}
+        </StatusBadge>
+      ),
     },
     {
       key: "actions",
@@ -86,16 +136,29 @@ export default function ResidentPassesPage() {
       cell: (pass) => (
         <div className="flex items-center justify-end gap-1">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/resident/passes/${pass.id}`} aria-label={t("qrTitle")}>
+            <Link
+              href={`/resident/passes/${pass.id}`}
+              aria-label={t("qrTitle")}
+            >
               <QrCode className="size-4" />
             </Link>
           </Button>
           {pass.status === "active" && (
-            <Button variant="ghost" size="icon" onClick={() => setRevokeTarget(pass)} aria-label={t("revoke")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setRevokeTarget(pass)}
+              aria-label={t("revoke")}
+            >
               <Ban className="size-4 text-danger" />
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(pass)} aria-label={tCommon("delete")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDeleteTarget(pass)}
+            aria-label={tCommon("delete")}
+          >
             <Trash2 className="size-4 text-muted-foreground" />
           </Button>
         </div>
@@ -116,6 +179,12 @@ export default function ResidentPassesPage() {
             </Link>
           </Button>
         }
+      />
+
+      <FilterBar
+        filters={filters}
+        values={{ status, today }}
+        onChange={handleFilterChange}
       />
 
       <DataTable
@@ -141,7 +210,9 @@ export default function ResidentPassesPage() {
         open={Boolean(revokeTarget)}
         onOpenChange={(open) => !open && setRevokeTarget(null)}
         title={t("revokeConfirmTitle")}
-        description={t("revokeConfirmDesc", { guestName: revokeTarget?.guestName ?? "" })}
+        description={t("revokeConfirmDesc", {
+          guestName: revokeTarget?.guestName ?? "",
+        })}
         onConfirm={() => revokeTarget && revokeMutation.mutate(revokeTarget.id)}
         isPending={revokeMutation.isPending}
       />

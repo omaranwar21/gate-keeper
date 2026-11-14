@@ -117,7 +117,11 @@ export interface ScanResponse {
   result: ScanResult;
   reason: DenyReason | null;
   guestName: string | null;
-  unit: Pick<Unit, "id" | "buildingId" | "number" | "floor" | "createdAt"> | null;
+  unit:
+    | (Pick<Unit, "id" | "buildingId" | "number" | "floor" | "createdAt"> & {
+        building: Building;
+      })
+    | null;
 }
 
 export interface JwtPayload {
