@@ -141,7 +141,7 @@ export const usersApi = {
       .then((r) => r.data),
 };
 
-// ---- access log + dashboard summary (also pending, same doc) ------------
+// ---- access log ------------------------------------------------------
 
 export interface AccessLogQuery extends PaginationQuery {
   date?: string;

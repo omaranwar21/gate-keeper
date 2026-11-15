@@ -8,6 +8,7 @@ import { FilterBar, type FilterConfig } from "@/components/design-system/filter-
 import { StatusBadge } from "@/components/design-system/status-badge";
 import { useAccessLogList } from "@/hooks/queryHooks/useAccessLog";
 import { useBuildingsList } from "@/hooks/queryHooks/useBuildings";
+import { useUnitsList } from "@/hooks/queryHooks/useUnits";
 import { scanResultTone } from "@/lib/status";
 import { formatCairoDateTime } from "@/lib/dates";
 import type { AccessLog, ScanResult } from "@/types/api";
@@ -21,11 +22,13 @@ export default function AdminAccessLogPage() {
   const [page, setPage] = useState(1);
   const [date, setDate] = useState<string>();
   const [buildingId, setBuildingId] = useState<string>();
+  const [unitId, setUnitId] = useState<string>();
   const [result, setResult] = useState<string>();
 
   const buildingsQuery = useBuildingsList({ perPage: 100 });
+  const unitsQuery = useUnitsList({ buildingId, perPage: 100 });
 
-  const query = useAccessLogList({ page, date, buildingId, result: result as ScanResult | undefined });
+  const query = useAccessLogList({ page, date, buildingId, unitId, result: result as ScanResult | undefined });
 
   const filters: FilterConfig[] = [
     { key: "date", type: "date" },
@@ -35,6 +38,16 @@ export default function AdminAccessLogPage() {
       label: tCommon("building"),
       options: (buildingsQuery.data?.data ?? []).map((b) => ({ value: b.id, label: b.name })),
     },
+    ...(buildingId
+      ? [
+          {
+            key: "unitId",
+            type: "select" as const,
+            label: tCommon("unit"),
+            options: (unitsQuery.data?.data ?? []).map((u) => ({ value: u.id, label: u.number })),
+          },
+        ]
+      : []),
     {
       key: "result",
       type: "select",
@@ -49,7 +62,11 @@ export default function AdminAccessLogPage() {
   function handleFilterChange(key: string, value: string | undefined) {
     setPage(1);
     if (key === "date") setDate(value);
-    if (key === "buildingId") setBuildingId(value);
+    if (key === "buildingId") {
+      setBuildingId(value);
+      setUnitId(undefined);
+    }
+    if (key === "unitId") setUnitId(value);
     if (key === "result") setResult(value);
   }
 
@@ -80,7 +97,7 @@ export default function AdminAccessLogPage() {
     <div className="space-y-6">
       <PageHeader title={t("title")} description={t("subtitle")} />
 
-      <FilterBar filters={filters} values={{ date, buildingId, result }} onChange={handleFilterChange} />
+      <FilterBar filters={filters} values={{ date, buildingId, unitId, result }} onChange={handleFilterChange} />
 
       <DataTable
         columns={columns}
