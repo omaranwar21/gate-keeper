@@ -6,9 +6,7 @@
 // Lives under src/ (not prisma/) so it's compiled by the normal `nest build`
 // alongside the rest of the app — running it straight from source via
 // ts-node fails to resolve the generated Prisma client's nodenext-style
-// import specifiers, the same issue worked around for the e2e tests. Run it
-// from the compiled output instead: see docs/seed.md or the README for the
-// exact command.
+// import specifiers, the same issue worked around for the e2e tests.
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
