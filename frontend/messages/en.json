@@ -224,8 +224,7 @@
       "guard": "Guard",
       "reason": "Reason",
       "scannedAt": "Scanned at",
-      "empty": "No scans match these filters.",
-      "pendingEndpoint": "The access log endpoint isn't live on the backend yet — this table will populate once it ships."
+      "empty": "No scans match these filters."
     }
   },
   "errors": {

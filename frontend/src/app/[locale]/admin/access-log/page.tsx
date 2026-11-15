@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/design-system/page-header";
 import { DataTable, type DataTableColumn } from "@/components/design-system/data-table";
 import { FilterBar, type FilterConfig } from "@/components/design-system/filter-bar";
 import { StatusBadge } from "@/components/design-system/status-badge";
-import { PendingBackendState } from "@/components/design-system/empty-state";
 import { useAccessLogList } from "@/hooks/queryHooks/useAccessLog";
 import { useBuildingsList } from "@/hooks/queryHooks/useBuildings";
 import { scanResultTone } from "@/lib/status";
@@ -83,20 +82,18 @@ export default function AdminAccessLogPage() {
 
       <FilterBar filters={filters} values={{ date, buildingId, result }} onChange={handleFilterChange} />
 
-      {query.isError ? (
-        <PendingBackendState title={t("title")} description={t("pendingEndpoint")} />
-      ) : (
-        <DataTable
-          columns={columns}
-          data={query.data?.data}
-          rowKey={(log) => log.id}
-          isLoading={query.isLoading}
-          errorTitle={tCommon("somethingWrong")}
-          meta={query.data?.meta}
-          onPageChange={setPage}
-          emptyTitle={t("empty")}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={query.data?.data}
+        rowKey={(log) => log.id}
+        isLoading={query.isLoading}
+        isError={query.isError}
+        onRetry={() => query.refetch()}
+        errorTitle={tCommon("somethingWrong")}
+        meta={query.data?.meta}
+        onPageChange={setPage}
+        emptyTitle={t("empty")}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Inbox, AlertTriangle, Construction } from "lucide-react";
+import { Inbox, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,7 @@ function Panel({
   className,
 }: {
   icon: LucideIcon;
-  tone: "neutral" | "danger" | "pending";
+  tone: "neutral" | "danger";
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
@@ -29,7 +29,6 @@ function Panel({
         className={cn("flex size-11 items-center justify-center rounded-full", {
           "bg-muted text-muted-foreground": tone === "neutral",
           "bg-danger-muted text-danger": tone === "danger",
-          "bg-warning-muted text-warning": tone === "pending",
         })}
       >
         <Icon className="size-5" />
@@ -83,19 +82,5 @@ export function ErrorState({
         )
       }
     />
-  );
-}
-
-export function PendingBackendState({
-  title,
-  description,
-  className,
-}: {
-  title: React.ReactNode;
-  description: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <Panel icon={Construction} tone="pending" title={title} description={description} className={className} />
   );
 }

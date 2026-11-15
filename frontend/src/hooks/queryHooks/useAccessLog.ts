@@ -6,6 +6,5 @@ export function useAccessLogList(query: AccessLogQuery = {}) {
   return useQuery({
     queryKey: queryKeys.accessLog.list(query),
     queryFn: () => accessLogApi.list(query),
-    retry: false,
   });
 }
