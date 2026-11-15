@@ -38,6 +38,10 @@
     "created": "Guest pass created",
     "updated": "Guest pass updated",
     "revoked": "Guest pass revoked",
-    "deleted": "Guest pass deleted"
+    "deleted": "Guest pass deleted",
+    "dailyLimitExceeded": "This unit has reached the admin-configured daily guest pass limit"
+  },
+  "settings": {
+    "updated": "Settings updated"
   }
 }

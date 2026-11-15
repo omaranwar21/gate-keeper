@@ -137,6 +137,19 @@ model GuestPass {
   @@map("guest_passes")
 }
 
+// A single admin-configurable row of compound-wide settings (id is always 1).
+model CompoundSettings {
+  id Int @id @default(1)
+
+  // Max number of non-revoked guest passes a single unit may have active
+  // on any given Cairo-local day. Null = unlimited.
+  maxActivePassesPerUnitPerDay Int? @map("max_active_passes_per_unit_per_day")
+
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("compound_settings")
+}
+
 // One row per scan attempt, allowed or denied.
 model AccessLog {
   id        String      @id @default(uuid()) @db.Uuid

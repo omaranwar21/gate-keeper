@@ -8,11 +8,13 @@ import {
 import { Prisma } from '../generated/prisma/client';
 import { DenyReason, PassType, ScanResult } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { PaginateOptions, paginator } from '../shared/utils/pagination';
 import { Role } from '../users/role.enum';
 import { CreateGuestPassDto } from './dto/create-guest-pass.dto';
 import { ScanPassDto } from './dto/scan-pass.dto';
 import { UpdateGuestPassDto } from './dto/update-guest-pass.dto';
+import { findDayOverLimit, PassOccurrenceInput } from './pass-limit';
 import {
   cairoDayBounds,
   derivePassStatus,
@@ -27,7 +29,10 @@ const paginate = paginator({ perPage: 10 });
 
 @Injectable()
 export class GuestPassesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   async create(residentId: string, dto: CreateGuestPassDto) {
     await this.assertResidentBelongsToUnit(residentId, dto.unitId);
@@ -56,6 +61,8 @@ export class GuestPassesService {
         dto.type === PassType.recurring ? dto.dailyStartMin! : null,
       dailyEndMin: dto.type === PassType.recurring ? dto.dailyEndMin! : null,
     };
+
+    await this.assertUnderDailyPassLimit(dto.unitId, data);
 
     for (let attempt = 1; attempt <= MAX_TOKEN_ATTEMPTS; attempt++) {
       try {
@@ -362,6 +369,23 @@ export class GuestPassesService {
     if (!(await this.residentBelongsToUnit(userId, unitId))) {
       // Don't distinguish "unit doesn't exist" from "not yours" either.
       throw new NotFoundException('units.notFound');
+    }
+  }
+
+  private async assertUnderDailyPassLimit(
+    unitId: string,
+    candidate: PassOccurrenceInput,
+  ) {
+    const limit = await this.settingsService.getMaxActivePassesPerUnitPerDay();
+    if (limit === null) return;
+
+    const existing = await this.prisma.guestPass.findMany({
+      where: { unitId, revokedAt: null },
+      select: { type: true, validFrom: true, validUntil: true, daysOfWeek: true },
+    });
+
+    if (findDayOverLimit(candidate, existing, limit)) {
+      throw new ConflictException('guestPasses.dailyLimitExceeded');
     }
   }
 

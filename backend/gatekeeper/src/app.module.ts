@@ -8,6 +8,7 @@ import { BuildingsModule } from './buildings/buildings.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GuestPassesModule } from './guest-passes/guest-passes.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SettingsModule } from './settings/settings.module';
 import { UnitsModule } from './units/units.module';
 import { UsersModule } from './users/users.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -35,6 +36,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     GuestPassesModule,
     DashboardModule,
     AccessLogsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
