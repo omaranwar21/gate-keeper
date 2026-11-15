@@ -170,7 +170,15 @@
       "activePasses": "Active passes",
       "expectedVisitors": "Today's expected visitors",
       "noVisitors": "No visitors expected today.",
-      "pendingEndpoint": "The dashboard summary endpoint isn't live on the backend yet — this view will populate once it ships."
+      "allowed": "Allowed",
+      "denied": "Denied",
+      "analytics": "Analytics",
+      "lastNDays": "Last {days} days",
+      "entriesTrend": "Entries & denials (last {days} days)",
+      "passStatusBreakdown": "Pass status breakdown",
+      "scansByBuilding": "Scans by building",
+      "peakHours": "Peak access hours",
+      "noChartData": "No data yet for this period."
     },
     "buildings": {
       "title": "Buildings",

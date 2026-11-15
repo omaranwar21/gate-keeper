@@ -6,6 +6,12 @@ export function useDashboardSummary() {
   return useQuery({
     queryKey: queryKeys.dashboard.summary,
     queryFn: dashboardApi.summary,
-    retry: false,
+  });
+}
+
+export function useDashboardAnalytics(days?: number) {
+  return useQuery({
+    queryKey: queryKeys.dashboard.analytics({ days }),
+    queryFn: () => dashboardApi.analytics(days),
   });
 }

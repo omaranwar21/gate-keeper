@@ -170,7 +170,15 @@
       "activePasses": "التصاريح السارية",
       "expectedVisitors": "الزوار المتوقعون اليوم",
       "noVisitors": "لا يُتوقع زوار اليوم.",
-      "pendingEndpoint": "نقطة ملخص اللوحة غير مفعّلة على الخادم بعد — ستمتلئ هذه الصفحة بالبيانات بمجرد إطلاقها."
+      "allowed": "مسموح",
+      "denied": "مرفوض",
+      "analytics": "التحليلات",
+      "lastNDays": "آخر {days} يومًا",
+      "entriesTrend": "الدخول والرفض (آخر {days} يومًا)",
+      "passStatusBreakdown": "توزيع حالة التصاريح",
+      "scansByBuilding": "عمليات المسح حسب المبنى",
+      "peakHours": "ساعات الذروة",
+      "noChartData": "لا توجد بيانات بعد لهذه الفترة."
     },
     "buildings": {
       "title": "المباني",

@@ -22,5 +22,6 @@ export const queryKeys = {
   },
   dashboard: {
     summary: ["dashboard", "summary"] as const,
+    analytics: (query: unknown) => ["dashboard", "analytics", query] as const,
   },
 } as const;

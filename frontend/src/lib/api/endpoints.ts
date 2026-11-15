@@ -172,7 +172,41 @@ export interface DashboardSummary {
   }>;
 }
 
+export interface EntriesTrendPoint {
+  date: string;
+  allowed: number;
+  denied: number;
+}
+
+export interface PassStatusCount {
+  status: PassStatus;
+  count: number;
+}
+
+export interface BuildingScanCount {
+  buildingId: string;
+  buildingName: string;
+  allowed: number;
+  denied: number;
+}
+
+export interface PeakHourCount {
+  hour: number;
+  count: number;
+}
+
+export interface DashboardAnalytics {
+  entriesTrend: EntriesTrendPoint[];
+  passStatusBreakdown: PassStatusCount[];
+  scansByBuilding: BuildingScanCount[];
+  peakHours: PeakHourCount[];
+}
+
 export const dashboardApi = {
   summary: () =>
     apiClient.get<DashboardSummary>("/dashboard/summary").then((r) => r.data),
+  analytics: (days?: number) =>
+    apiClient
+      .get<DashboardAnalytics>("/dashboard/analytics", { params: { days } })
+      .then((r) => r.data),
 };
