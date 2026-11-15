@@ -144,7 +144,8 @@ export const usersApi = {
 // ---- access log ------------------------------------------------------
 
 export interface AccessLogQuery extends PaginationQuery {
-  date?: string;
+  from?: string;
+  to?: string;
   buildingId?: string;
   unitId?: string;
   result?: "allowed" | "denied";

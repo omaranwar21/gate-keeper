@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { PageHeader } from "@/components/design-system/page-header";
 import { FormField } from "@/components/design-system/form-field";
 import { DatePicker } from "@/components/design-system/date-picker";
+import { TimePicker } from "@/components/design-system/time-picker";
 import { DayOfWeekPicker } from "@/components/design-system/day-of-week-picker";
 import { EmptyState } from "@/components/design-system/empty-state";
 import { Button } from "@/components/ui/button";
@@ -184,10 +185,18 @@ export default function NewGuestPassPage() {
               required
               error={type === "one_time" && "endTime" in errors ? t("windowInvalid") : undefined}
             >
-              <Input id="startTime" type="time" {...register("startTime")} />
+              <Controller
+                control={control}
+                name="startTime"
+                render={({ field }) => <TimePicker id="startTime" value={field.value} onChange={field.onChange} />}
+              />
             </FormField>
             <FormField label={t("validUntil")} htmlFor="endTime" required>
-              <Input id="endTime" type="time" {...register("endTime")} />
+              <Controller
+                control={control}
+                name="endTime"
+                render={({ field }) => <TimePicker id="endTime" value={field.value} onChange={field.onChange} />}
+              />
             </FormField>
           </div>
         ) : (
@@ -228,7 +237,13 @@ export default function NewGuestPassPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField label={t("dailyStart")} htmlFor="dailyStartTime" required>
-                <Input id="dailyStartTime" type="time" {...register("dailyStartTime")} />
+                <Controller
+                  control={control}
+                  name="dailyStartTime"
+                  render={({ field }) => (
+                    <TimePicker id="dailyStartTime" value={field.value} onChange={field.onChange} />
+                  )}
+                />
               </FormField>
               <FormField
                 label={t("dailyEnd")}
@@ -236,7 +251,13 @@ export default function NewGuestPassPage() {
                 required
                 error={"dailyEndTime" in errors ? t("dailyWindowInvalid") : undefined}
               >
-                <Input id="dailyEndTime" type="time" {...register("dailyEndTime")} />
+                <Controller
+                  control={control}
+                  name="dailyEndTime"
+                  render={({ field }) => (
+                    <TimePicker id="dailyEndTime" value={field.value} onChange={field.onChange} />
+                  )}
+                />
               </FormField>
             </div>
           </div>

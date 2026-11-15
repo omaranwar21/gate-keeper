@@ -1,5 +1,4 @@
 import { buildAccessLogWhere } from './access-log-filters';
-import { cairoDateKey } from '../shared/utils/cairo-time';
 import { ScanResult } from '../generated/prisma/enums';
 
 describe('buildAccessLogWhere', () => {
@@ -7,16 +6,31 @@ describe('buildAccessLogWhere', () => {
     expect(buildAccessLogWhere({})).toBeUndefined();
   });
 
-  it('filters by the Cairo-local calendar day when date is given', () => {
-    const where = buildAccessLogWhere({ date: '2026-01-15' });
-    const condition = (
-      where as { AND: Array<{ scannedAt: { gte: Date; lt: Date } }> }
-    ).AND[0].scannedAt;
+  it('bounds scannedAt by the given from/to instants', () => {
+    const where = buildAccessLogWhere({
+      from: '2026-01-15T06:00:00.000Z',
+      to: '2026-01-16T15:00:00.000Z',
+    });
 
-    expect(cairoDateKey(condition.gte)).toBe('2026-01-15');
-    expect(cairoDateKey(new Date(condition.lt.getTime() - 1))).toBe('2026-01-15');
-    expect(cairoDateKey(condition.lt)).toBe('2026-01-16');
-    expect(condition.lt.getTime() - condition.gte.getTime()).toBe(24 * 60 * 60_000);
+    expect(where).toEqual({
+      AND: [
+        {
+          scannedAt: {
+            gte: new Date('2026-01-15T06:00:00.000Z'),
+            lte: new Date('2026-01-16T15:00:00.000Z'),
+          },
+        },
+      ],
+    });
+  });
+
+  it('allows an open-ended period when only one bound is given', () => {
+    expect(buildAccessLogWhere({ from: '2026-01-15T06:00:00.000Z' })).toEqual({
+      AND: [{ scannedAt: { gte: new Date('2026-01-15T06:00:00.000Z') } }],
+    });
+    expect(buildAccessLogWhere({ to: '2026-01-16T15:00:00.000Z' })).toEqual({
+      AND: [{ scannedAt: { lte: new Date('2026-01-16T15:00:00.000Z') } }],
+    });
   });
 
   it('combines buildingId, unitId and result filters with AND', () => {
