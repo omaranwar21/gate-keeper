@@ -1,7 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src"
+    "rootDir": "./src",
+    // Jest's globals are a test-only concern (the base config pulls them in
+    // project-wide); the production build doesn't need @types/jest installed.
+    "types": ["node"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
