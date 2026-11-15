@@ -6,6 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PageHeader } from "@/components/design-system/page-header";
 import { FormField } from "@/components/design-system/form-field";
+import { DatePicker } from "@/components/design-system/date-picker";
 import { DayOfWeekPicker } from "@/components/design-system/day-of-week-picker";
 import { EmptyState } from "@/components/design-system/empty-state";
 import { Button } from "@/components/ui/button";
@@ -169,7 +170,13 @@ export default function NewGuestPassPage() {
         {type === "one_time" ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <FormField label={tCommon("date")} htmlFor="visitDate" required>
-              <Input id="visitDate" type="date" min={today} {...register("visitDate")} />
+              <Controller
+                control={control}
+                name="visitDate"
+                render={({ field }) => (
+                  <DatePicker id="visitDate" value={field.value} onChange={field.onChange} min={today} />
+                )}
+              />
             </FormField>
             <FormField
               label={t("validFrom")}
@@ -187,7 +194,13 @@ export default function NewGuestPassPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField label={t("validFrom")} htmlFor="startDate" required>
-                <Input id="startDate" type="date" min={today} {...register("startDate")} />
+                <Controller
+                  control={control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <DatePicker id="startDate" value={field.value} onChange={field.onChange} min={today} />
+                  )}
+                />
               </FormField>
               <FormField
                 label={t("validUntil")}
@@ -195,7 +208,13 @@ export default function NewGuestPassPage() {
                 required
                 error={"untilDate" in errors ? t("windowInvalid") : undefined}
               >
-                <Input id="untilDate" type="date" min={today} {...register("untilDate")} />
+                <Controller
+                  control={control}
+                  name="untilDate"
+                  render={({ field }) => (
+                    <DatePicker id="untilDate" value={field.value} onChange={field.onChange} min={today} />
+                  )}
+                />
               </FormField>
             </div>
 

@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -11,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/design-system/date-picker";
 
 export type FilterConfig =
   | { key: string; type: "select"; label: string; options: { value: string; label: string }[] }
@@ -58,11 +58,11 @@ export function FilterBar({
         return (
           <div key={filter.key} className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-muted-foreground">{t("date")}</label>
-            <Input
-              type="date"
+            <DatePicker
               className="w-44"
-              value={values[filter.key] ?? ""}
-              onChange={(event) => onChange(filter.key, event.target.value || undefined)}
+              value={values[filter.key]}
+              onChange={(value) => onChange(filter.key, value)}
+              placeholder={t("date")}
             />
           </div>
         );
