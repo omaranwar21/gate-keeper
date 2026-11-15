@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { createObserveModule } from '@nestjs/observe';
+import { AccessLogsModule } from './access-logs/access-logs.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { BuildingsModule } from './buildings/buildings.module';
@@ -33,6 +34,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     UnitsModule,
     GuestPassesModule,
     DashboardModule,
+    AccessLogsModule,
   ],
   controllers: [AppController],
   providers: [
