@@ -1,0 +1,162 @@
+// GateKeeper data model.
+// All timestamps are stored as `timestamptz` (UTC instants). Wall-clock times
+// for recurring passes (e.g. 08:00–17:00) are minutes since midnight in the
+// compound's timezone, Africa/Cairo.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  resident
+  guard
+}
+
+enum PassType {
+  one_time
+  recurring
+}
+
+enum ScanResult {
+  allowed
+  denied
+}
+
+enum DenyReason {
+  invalid_token
+  revoked
+  already_used
+  expired
+  not_yet_valid
+  outside_time_window
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
+  phone        String?
+  role         Role
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  units         UnitResident[]
+  createdPasses GuestPass[]    @relation("PassCreator")
+  revokedPasses GuestPass[]    @relation("PassRevoker")
+  scans         AccessLog[]
+
+  @@map("users")
+}
+
+model Building {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  units Unit[]
+
+  @@map("buildings")
+}
+
+model Unit {
+  id         String   @id @default(uuid()) @db.Uuid
+  buildingId String   @map("building_id") @db.Uuid
+  number     String
+  floor      Int?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  building   Building       @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  residents  UnitResident[]
+  passes     GuestPass[]
+  accessLogs AccessLog[]
+
+  // "Unit 101" can exist in two buildings, but only once per building.
+  @@unique([buildingId, number])
+  @@map("units")
+}
+
+// Many-to-many: a resident can belong to several units, a unit can have several residents.
+model UnitResident {
+  userId     String   @map("user_id") @db.Uuid
+  unitId     String   @map("unit_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@id([userId, unitId])
+  @@index([unitId])
+  @@map("unit_residents")
+}
+
+model GuestPass {
+  id          String   @id @default(uuid()) @db.Uuid
+  unitId      String   @map("unit_id") @db.Uuid
+  createdById String   @map("created_by_id") @db.Uuid
+  guestName   String   @map("guest_name")
+  type        PassType
+
+  // Random, unguessable value encoded in the QR code (never the row id).
+  token String @unique
+
+  // Overall validity range. One-time: the visit window. Recurring: first day → last day.
+  validFrom  DateTime @map("valid_from") @db.Timestamptz(3)
+  validUntil DateTime @map("valid_until") @db.Timestamptz(3)
+
+  // Recurring only: allowed weekdays (0 = Sunday … 6 = Saturday) and daily
+  // window in Cairo local time, as minutes since midnight (480 = 08:00).
+  daysOfWeek    Int[] @default([]) @map("days_of_week")
+  dailyStartMin Int?  @map("daily_start_min")
+  dailyEndMin   Int?  @map("daily_end_min")
+
+  // Status is derived from these columns instead of being stored:
+  // revoked → revokedAt set; used → usedAt set (one-time only);
+  // expired → now > validUntil; otherwise active.
+  usedAt      DateTime? @map("used_at") @db.Timestamptz(3)
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz(3)
+  revokedById String?   @map("revoked_by_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  createdBy  User        @relation("PassCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  revokedBy  User?       @relation("PassRevoker", fields: [revokedById], references: [id], onDelete: SetNull)
+  accessLogs AccessLog[]
+
+  @@index([unitId, validFrom])
+  @@index([validFrom, validUntil])
+  @@map("guest_passes")
+}
+
+// One row per scan attempt, allowed or denied.
+model AccessLog {
+  id        String      @id @default(uuid()) @db.Uuid
+  // Null when the scanned code matched no pass (invalid_token).
+  passId    String?     @map("pass_id") @db.Uuid
+  // Copied from the pass so the log can be filtered by unit/building with one join.
+  unitId    String?     @map("unit_id") @db.Uuid
+  guardId   String      @map("guard_id") @db.Uuid
+  result    ScanResult
+  reason    DenyReason?
+  // Snapshot of the guest name at scan time.
+  guestName String?     @map("guest_name")
+  scannedAt DateTime    @default(now()) @map("scanned_at") @db.Timestamptz(3)
+
+  pass  GuestPass? @relation(fields: [passId], references: [id], onDelete: SetNull)
+  unit  Unit?      @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  guard User       @relation(fields: [guardId], references: [id], onDelete: Restrict)
+
+  @@index([scannedAt(sort: Desc)])
+  @@index([unitId, scannedAt])
+  @@index([result, scannedAt])
+  @@map("access_logs")
+}

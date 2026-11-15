@@ -1,0 +1,43 @@
+{
+  "auth": {
+    "emailInUse": "البريد الإلكتروني مستخدم بالفعل",
+    "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    "loggedIn": "تم تسجيل الدخول بنجاح",
+    "userCreated": "تم إنشاء المستخدم بنجاح"
+  },
+  "buildings": {
+    "notFound": "المبنى غير موجود",
+    "nameTaken": "يوجد مبنى بهذا الاسم من قبل",
+    "hasUnits": "لا يمكن حذف مبنى يحتوي على وحدات",
+    "created": "تم إنشاء المبنى",
+    "updated": "تم تحديث المبنى",
+    "deleted": "تم حذف المبنى"
+  },
+  "units": {
+    "notFound": "الوحدة غير موجودة",
+    "userNotResident": "المستخدم ليس مقيمًا",
+    "residentNotAssigned": "المقيم غير معيّن لهذه الوحدة",
+    "residentAlreadyAssigned": "هذه الوحدة معيّنة لهذا المقيم من قبل",
+    "hasRelatedRecords": "لا يمكن حذف وحدة تحتوي على سجلات مرتبطة بها",
+    "created": "تم إنشاء الوحدة",
+    "updated": "تم تحديث الوحدة",
+    "deleted": "تم حذف الوحدة",
+    "residentAssigned": "تم تعيين المقيم",
+    "residentUnassigned": "تم إلغاء تعيين المقيم"
+  },
+  "users": {
+    "notFound": "المستخدم غير موجود"
+  },
+  "guestPasses": {
+    "notFound": "التصريح غير موجود",
+    "validWindowInvalid": "يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء",
+    "dailyWindowInvalid": "يجب أن يكون وقت البدء اليومي قبل وقت الانتهاء اليومي",
+    "cannotUpdateRevokedOrUsed": "لا يمكن تعديل تصريح مُلغى أو مُستخدم",
+    "recurringFieldsOnly": "أيام الأسبوع ووقت البدء والانتهاء اليومي تنطبق فقط على التصاريح المتكررة",
+    "alreadyRevoked": "التصريح مُلغى بالفعل",
+    "created": "تم إنشاء التصريح",
+    "updated": "تم تحديث التصريح",
+    "revoked": "تم إلغاء التصريح",
+    "deleted": "تم حذف التصريح"
+  }
+}
