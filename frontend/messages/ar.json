@@ -74,7 +74,8 @@
     "accessLog": "سجل الدخول",
     "myPasses": "تصاريحي",
     "scan": "مسح",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "settings": "الإعدادات"
   },
   "passes": {
     "title": "تصاريحي",
@@ -225,6 +226,14 @@
       "reason": "السبب",
       "scannedAt": "وقت المسح",
       "empty": "لا توجد نتائج مطابقة لهذه الفلاتر."
+    },
+    "settings": {
+      "title": "الإعدادات",
+      "subtitle": "إعدادات عامة على مستوى المجمع.",
+      "maxActivePassesPerUnitPerDay": "الحد الأقصى لتصاريح الزوار النشطة لكل وحدة يوميًا",
+      "maxActivePassesHint": "اتركه فارغًا لعدم وجود حد.",
+      "unlimitedPlaceholder": "بلا حد",
+      "invalidLimit": "يجب أن يكون رقمًا صحيحًا أكبر من أو يساوي 1"
     }
   },
   "errors": {

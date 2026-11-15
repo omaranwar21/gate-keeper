@@ -74,7 +74,8 @@
     "accessLog": "Access log",
     "myPasses": "My passes",
     "scan": "Scan",
-    "logout": "Log out"
+    "logout": "Log out",
+    "settings": "Settings"
   },
   "passes": {
     "title": "My passes",
@@ -225,6 +226,14 @@
       "reason": "Reason",
       "scannedAt": "Scanned at",
       "empty": "No scans match these filters."
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Compound-wide configuration.",
+      "maxActivePassesPerUnitPerDay": "Max active passes per unit per day",
+      "maxActivePassesHint": "Leave empty for no limit.",
+      "unlimitedPlaceholder": "No limit",
+      "invalidLimit": "Must be a whole number of 1 or more"
     }
   },
   "errors": {

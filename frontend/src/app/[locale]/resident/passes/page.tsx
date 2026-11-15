@@ -82,6 +82,12 @@ export default function ResidentPassesPage() {
       ),
     },
     {
+      key: "unit",
+      header: tCommon("unit"),
+      cell: (pass) =>
+        pass.unit ? `${pass.unit.building?.name ?? ""} · ${pass.unit.number}` : "—",
+    },
+    {
       key: "type",
       header: t("type"),
       cell: (pass) =>
