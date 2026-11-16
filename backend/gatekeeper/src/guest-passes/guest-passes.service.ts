@@ -8,6 +8,7 @@ import {
 import { Prisma } from '../generated/prisma/client';
 import { DenyReason, PassType, ScanResult } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { SettingsService } from '../settings/settings.service';
 import { PaginateOptions, paginator } from '../shared/utils/pagination';
 import { Role } from '../users/role.enum';
@@ -32,6 +33,7 @@ export class GuestPassesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   async create(residentId: string, dto: CreateGuestPassDto) {
@@ -358,7 +360,7 @@ export class GuestPassesService {
     result: ScanResult;
     reason?: DenyReason;
   }) {
-    await this.prisma.accessLog.create({
+    const log = await this.prisma.accessLog.create({
       data: {
         guardId: params.guardId,
         passId: params.pass?.id ?? null,
@@ -367,7 +369,14 @@ export class GuestPassesService {
         result: params.result,
         reason: params.reason ?? null,
       },
+      // Same shape as a GET /access-logs row, so clients can prepend it as-is.
+      include: {
+        unit: { include: { building: true } },
+        pass: { select: { id: true, guestName: true, type: true } },
+        guard: { select: { id: true, fullName: true } },
+      },
     });
+    this.realtime.emitAccessLogCreated(log);
   }
 
   private async residentBelongsToUnit(userId: string, unitId: string) {
