@@ -174,6 +174,16 @@ Postgres evaluates the `WHERE` against the row's current committed state under a
 
 Recurring passes have no "used" state, so they skip this path (one entry per allowed day isn't enforced — see *skipped*).
 
+### Race condition on the daily pass limit — per-unit advisory lock
+
+The daily-limit check (below) aggregates multiple rows — every non-revoked pass of the unit, expanded into the Cairo days it occupies — so it can't be collapsed into one conditional `updateMany` the way the scan race was. Instead, `create()` wraps the count-check and the insert in a single Prisma transaction, guarded by a transaction-scoped Postgres advisory lock keyed by the unit id:
+
+```ts
+await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${dto.unitId}, 0))`;
+```
+
+Two concurrent creates for the same unit take the same lock key, so the second transaction blocks until the first commits or rolls back — by which point its own count-check always sees the first pass's row. The lock releases automatically at commit/rollback (no manual unlock), and it holds across multiple API instances since it's a Postgres-level lock, not an in-process one. Creates for different units use different keys and aren't serialized against each other. Proven by an e2e test that fires two concurrent creates against a unit already at its limit and asserts exactly one succeeds (`201`) and one is rejected (`409`).
+
 ### Scan decision — a pure function
 
 `validatePassForScan` ([`pass-validation.ts`](backend/gatekeeper/src/guest-passes/pass-validation.ts)) takes the pass and `now` and returns `allowed` or a reason: `revoked`, `already_used`, `not_yet_valid`, `expired`, `outside_time_window` (wrong weekday or outside the daily hours). It has no DB access, so it's unit-tested in isolation, including Cairo weekday and minute-of-day boundaries. Unknown tokens give `invalid_token`.
@@ -246,7 +256,6 @@ Why manual: the API is on Render's **free** plan, which doesn't offer a *Pre-Dep
 - **Real-time updates, facility booking, offline gate, Docker Compose, CI/CD** — not done. Picked pass limits and Arabic/RTL as the bonuses within the timebox.
 - **Role changes need a re-login:** `RoleGuard` trusts the role in the JWT (stateless, no DB lookup per request), so a changed role takes effect when the 1h token expires. Accepted for a short-lived token; a token version column or deny-list would fix it.
 - **No refresh tokens:** sessions last `JWT_EXPIRES_IN` (1h), then the user signs in again.
-- **Pass-limit check isn't concurrency-safe:** two simultaneous creates for the same unit could both pass the count check. A per-unit advisory lock or `SERIALIZABLE` transaction would close it; the impact (one extra pass) was judged low.
 - **Recurring passes allow multiple entries per allowed day** (a housekeeper can step out and back in). Limiting to one entry per day would mean recording per-day usage.
 - **No rate limiting** on login or scan. `@nestjs/throttler` would be the first addition.
 - **One role per user** (a guard can't also be a resident).
@@ -257,5 +266,5 @@ Why manual: the API is on Render's **free** plan, which doesn't offer a *Pre-Dep
 2. **CI/CD** — GitHub Actions running lint, unit and e2e tests (Postgres service container) on every PR, deploying on merge to `main`.
 3. **Docker Compose** for one-command local setup.
 4. **Offline gate mode** — cache a short-lived, signed allow-list of today's tokens on the guard device and queue scans for upload. The trade-off: a revoked pass or a one-time pass used at another gate could be accepted until the device reconnects, so it should be time-boxed and visibly flagged.
-5. **Security hardening** — rate limiting, refresh-token rotation, audit log for admin actions, token versioning for instant role/session revocation.
-6. Close the pass-limit race with an advisory lock, and add frontend tests (component + Playwright for the three role flows).
+5. **Security hardening** — refresh-token rotation, audit log for admin actions, token versioning for instant role/session revocation.
+6. Add frontend tests (component + Playwright for the three role flows).

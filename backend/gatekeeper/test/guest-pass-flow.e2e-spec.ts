@@ -40,6 +40,10 @@ let residentId: string;
 let guardId: string;
 let buildingId: string;
 let unitId: string;
+// A second, dedicated unit for the pass-limit race test below, so setting
+// the (global, admin-wide) daily limit can't be confused by the passes the
+// other tests in this file already created for `unitId` on the same day.
+let raceUnitId: string;
 
 async function waitForServer() {
   for (let attempt = 0; attempt < 60; attempt++) {
@@ -105,6 +109,17 @@ beforeAll(async () => {
     .post(`/units/${unitId}/residents`)
     .set('Authorization', `Bearer ${adminToken}`)
     .send({ userId: residentId });
+
+  const raceUnitRes = await request(BASE_URL)
+    .post('/units')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ buildingId, number: '102' });
+  raceUnitId = raceUnitRes.body.data.id;
+
+  await request(BASE_URL)
+    .post(`/units/${raceUnitId}/residents`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ userId: residentId });
 });
 
 afterAll(async () => {
@@ -112,8 +127,8 @@ afterAll(async () => {
   // unitId null (no pass matched), which would otherwise survive and block
   // deleting the guard user below (AccessLog.guard is onDelete: Restrict).
   await prisma.accessLog.deleteMany({ where: { guardId } });
-  await prisma.guestPass.deleteMany({ where: { unitId } });
-  await prisma.unit.deleteMany({ where: { id: unitId } });
+  await prisma.guestPass.deleteMany({ where: { unitId: { in: [unitId, raceUnitId] } } });
+  await prisma.unit.deleteMany({ where: { id: { in: [unitId, raceUnitId] } } });
   await prisma.building.deleteMany({ where: { id: buildingId } });
   await prisma.user.deleteMany({ where: { email: { in: Object.values(emails) } } });
   await prisma.$disconnect();
@@ -176,5 +191,39 @@ describe('guest pass scan decision', () => {
 
     const results: string[] = [first.body.result, second.body.result].sort((a, b) => a.localeCompare(b));
     expect(results).toEqual(['allowed', 'denied']);
+  });
+});
+
+describe('daily pass-limit race', () => {
+  afterEach(async () => {
+    // maxActivePassesPerUnitPerDay is a single admin-wide setting, not scoped
+    // to a unit — always clear it straight after so it can't leak into
+    // anything else that runs later in this suite.
+    await request(BASE_URL)
+      .patch('/settings')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ maxActivePassesPerUnitPerDay: null });
+  });
+
+  it('allows exactly one of two concurrent creates that would both exceed the limit', async () => {
+    await request(BASE_URL)
+      .patch('/settings')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ maxActivePassesPerUnitPerDay: 1 });
+
+    const window = futureOneTimeWindow();
+    const [first, second] = await Promise.all([
+      request(BASE_URL)
+        .post('/passes')
+        .set('Authorization', `Bearer ${residentToken}`)
+        .send({ unitId: raceUnitId, guestName: 'Race A', type: 'one_time', ...window }),
+      request(BASE_URL)
+        .post('/passes')
+        .set('Authorization', `Bearer ${residentToken}`)
+        .send({ unitId: raceUnitId, guestName: 'Race B', type: 'one_time', ...window }),
+    ]);
+
+    const statuses = [first.status, second.status].sort((a, b) => a - b);
+    expect(statuses).toEqual([201, 409]);
   });
 });

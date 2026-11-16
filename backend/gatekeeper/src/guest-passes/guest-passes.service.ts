@@ -62,12 +62,24 @@ export class GuestPassesService {
       dailyEndMin: dto.type === PassType.recurring ? dto.dailyEndMin! : null,
     };
 
-    await this.assertUnderDailyPassLimit(dto.unitId, data);
-
     for (let attempt = 1; attempt <= MAX_TOKEN_ATTEMPTS; attempt++) {
       try {
-        return await this.prisma.guestPass.create({
-          data: { ...data, token: this.generateToken() },
+        return await this.prisma.$transaction(async (tx) => {
+          // Unlike the scan race, the daily-limit check aggregates multiple
+          // rows (every non-revoked pass of the unit, expanded into days),
+          // so it can't be collapsed into one conditional updateMany. Instead,
+          // serialize concurrent creates for the same unit with a transaction-
+          // scoped advisory lock: the second transaction blocks here until the
+          // first commits or rolls back, so its own count-check below always
+          // sees the first pass's row. The lock is released automatically at
+          // commit/rollback — no manual unlock needed.
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${dto.unitId}, 0))`;
+
+          await this.assertUnderDailyPassLimit(dto.unitId, data, tx);
+
+          return tx.guestPass.create({
+            data: { ...data, token: this.generateToken() },
+          });
         });
       } catch (error) {
         if (!this.isTokenClash(error) || attempt === MAX_TOKEN_ATTEMPTS) {
@@ -375,11 +387,12 @@ export class GuestPassesService {
   private async assertUnderDailyPassLimit(
     unitId: string,
     candidate: PassOccurrenceInput,
+    tx: Prisma.TransactionClient,
   ) {
     const limit = await this.settingsService.getMaxActivePassesPerUnitPerDay();
     if (limit === null) return;
 
-    const existing = await this.prisma.guestPass.findMany({
+    const existing = await tx.guestPass.findMany({
       where: { unitId, revokedAt: null },
       select: { type: true, validFrom: true, validUntil: true, daysOfWeek: true },
     });
