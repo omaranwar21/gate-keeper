@@ -7,7 +7,7 @@
 // headline concurrency requirement — proves a one-time pass can't be
 // scanned twice even when two scans race each other concurrently.
 import 'dotenv/config';
-import { execSync, spawn, type ChildProcess } from 'child_process';
+import { spawn, type ChildProcess } from 'child_process';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
 import request from 'supertest';
@@ -66,7 +66,9 @@ function futureOneTimeWindow() {
 }
 
 beforeAll(async () => {
-  execSync('npm run build', { cwd: ROOT_DIR, stdio: 'ignore' });
+  // The build itself runs once in Jest's globalSetup (test/global-setup.js),
+  // shared across every e2e spec file — not here, to avoid two spec files
+  // racing on dist/ when Jest runs them in parallel workers.
   server = spawn('node', ['dist/main.js'], {
     cwd: ROOT_DIR,
     env: { ...process.env, PORT: String(PORT) },

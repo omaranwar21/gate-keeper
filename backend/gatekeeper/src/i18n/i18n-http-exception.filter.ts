@@ -1,4 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common';
+import { STATUS_CODES } from 'http';
 import type { Request, Response } from 'express';
 import { parseContentLanguage, translate, type SupportedLocale } from './messages';
 
@@ -31,6 +32,20 @@ export class I18nHttpExceptionFilter implements ExceptionFilter {
       response.status(status).json({
         ...body,
         message: translateMessage((body as { message: unknown }).message, locale),
+      });
+      return;
+    }
+
+    // Some exceptions (e.g. @nestjs/throttler's ThrottlerException) build
+    // their response as a bare string instead of the usual
+    // { statusCode, message, error } object — normalize it to that shape
+    // too, so every exception translates and every client-side error
+    // parser (which expects `body.message`) sees the same envelope.
+    if (typeof body === 'string') {
+      response.status(status).json({
+        statusCode: status,
+        message: translate(body, locale),
+        error: STATUS_CODES[status] ?? 'Error',
       });
       return;
     }

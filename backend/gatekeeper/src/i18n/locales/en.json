@@ -3,7 +3,8 @@
     "emailInUse": "Email already in use",
     "invalidCredentials": "Invalid email or password",
     "loggedIn": "Logged in successfully",
-    "userCreated": "User created successfully"
+    "userCreated": "User created successfully",
+    "tooManyRequests": "Too many requests — please try again in a minute"
   },
   "buildings": {
     "notFound": "Building not found",
