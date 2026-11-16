@@ -7,6 +7,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     instrument: ObserveInstrument,
   });
+  // Render (and most PaaS hosts) sit behind a reverse proxy: without this,
+  // every request looks like it comes from the proxy's own IP, and rate
+  // limiting would throttle all users together instead of individually.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new I18nHttpExceptionFilter());

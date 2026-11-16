@@ -8,11 +8,14 @@ import {
 import { Prisma } from '../generated/prisma/client';
 import { DenyReason, PassType, ScanResult } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { SettingsService } from '../settings/settings.service';
 import { PaginateOptions, paginator } from '../shared/utils/pagination';
 import { Role } from '../users/role.enum';
 import { CreateGuestPassDto } from './dto/create-guest-pass.dto';
 import { ScanPassDto } from './dto/scan-pass.dto';
 import { UpdateGuestPassDto } from './dto/update-guest-pass.dto';
+import { findDayOverLimit, PassOccurrenceInput } from './pass-limit';
 import {
   cairoDayBounds,
   derivePassStatus,
@@ -27,7 +30,11 @@ const paginate = paginator({ perPage: 10 });
 
 @Injectable()
 export class GuestPassesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
 
   async create(residentId: string, dto: CreateGuestPassDto) {
     await this.assertResidentBelongsToUnit(residentId, dto.unitId);
@@ -59,8 +66,22 @@ export class GuestPassesService {
 
     for (let attempt = 1; attempt <= MAX_TOKEN_ATTEMPTS; attempt++) {
       try {
-        return await this.prisma.guestPass.create({
-          data: { ...data, token: this.generateToken() },
+        return await this.prisma.$transaction(async (tx) => {
+          // Unlike the scan race, the daily-limit check aggregates multiple
+          // rows (every non-revoked pass of the unit, expanded into days),
+          // so it can't be collapsed into one conditional updateMany. Instead,
+          // serialize concurrent creates for the same unit with a transaction-
+          // scoped advisory lock: the second transaction blocks here until the
+          // first commits or rolls back, so its own count-check below always
+          // sees the first pass's row. The lock is released automatically at
+          // commit/rollback — no manual unlock needed.
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${dto.unitId}, 0))`;
+
+          await this.assertUnderDailyPassLimit(dto.unitId, data, tx);
+
+          return tx.guestPass.create({
+            data: { ...data, token: this.generateToken() },
+          });
         });
       } catch (error) {
         if (!this.isTokenClash(error) || attempt === MAX_TOKEN_ATTEMPTS) {
@@ -339,7 +360,7 @@ export class GuestPassesService {
     result: ScanResult;
     reason?: DenyReason;
   }) {
-    await this.prisma.accessLog.create({
+    const log = await this.prisma.accessLog.create({
       data: {
         guardId: params.guardId,
         passId: params.pass?.id ?? null,
@@ -348,7 +369,14 @@ export class GuestPassesService {
         result: params.result,
         reason: params.reason ?? null,
       },
+      // Same shape as a GET /access-logs row, so clients can prepend it as-is.
+      include: {
+        unit: { include: { building: true } },
+        pass: { select: { id: true, guestName: true, type: true } },
+        guard: { select: { id: true, fullName: true } },
+      },
     });
+    this.realtime.emitAccessLogCreated(log);
   }
 
   private async residentBelongsToUnit(userId: string, unitId: string) {
@@ -362,6 +390,24 @@ export class GuestPassesService {
     if (!(await this.residentBelongsToUnit(userId, unitId))) {
       // Don't distinguish "unit doesn't exist" from "not yours" either.
       throw new NotFoundException('units.notFound');
+    }
+  }
+
+  private async assertUnderDailyPassLimit(
+    unitId: string,
+    candidate: PassOccurrenceInput,
+    tx: Prisma.TransactionClient,
+  ) {
+    const limit = await this.settingsService.getMaxActivePassesPerUnitPerDay();
+    if (limit === null) return;
+
+    const existing = await tx.guestPass.findMany({
+      where: { unitId, revokedAt: null },
+      select: { type: true, validFrom: true, validUntil: true, daysOfWeek: true },
+    });
+
+    if (findDayOverLimit(candidate, existing, limit)) {
+      throw new ConflictException('guestPasses.dailyLimitExceeded');
     }
   }
 

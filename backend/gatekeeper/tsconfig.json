@@ -2,6 +2,12 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    // Prisma 7's client generator emits `.ts`-extension relative imports on
+    // Node versions with native TS type-stripping enabled (newer Node 22
+    // patches onward), instead of the `.js` extension plain compiled output
+    // needs. This rewrites them at emit time, so the compiled dist/ is
+    // correct no matter which Node version ran `prisma generate`.
+    "rewriteRelativeImportExtensions": true,
     "resolvePackageJsonExports": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,

@@ -211,3 +211,17 @@ export const dashboardApi = {
       .get<DashboardAnalytics>("/dashboard/analytics", { params: { days } })
       .then((r) => r.data),
 };
+
+export interface CompoundSettings {
+  id: number;
+  // Max non-revoked guest passes a single unit may have active on any given
+  // day; null means unlimited.
+  maxActivePassesPerUnitPerDay: number | null;
+  updatedAt: string;
+}
+
+export const settingsApi = {
+  get: () => apiClient.get<CompoundSettings>("/settings").then((r) => r.data),
+  update: (data: { maxActivePassesPerUnitPerDay: number | null }) =>
+    apiClient.patch<SuccessEnvelope<CompoundSettings>>("/settings", data).then((r) => r.data),
+};

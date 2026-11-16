@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { createObserveModule } from '@nestjs/observe';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AccessLogsModule } from './access-logs/access-logs.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
@@ -8,6 +9,7 @@ import { BuildingsModule } from './buildings/buildings.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GuestPassesModule } from './guest-passes/guest-passes.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SettingsModule } from './settings/settings.module';
 import { UnitsModule } from './units/units.module';
 import { UsersModule } from './users/users.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -27,6 +29,10 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     //   appSecret: process.env.OBSERVE_APP_SECRET ?? 'YOUR_APP_SECRET',
     //   serviceId: 'gatekeeper',
     // }),
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: 'default', ttl: 60_000, limit: 60 }],
+      errorMessage: 'auth.tooManyRequests',
+    }),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -35,9 +41,14 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     GuestPassesModule,
     DashboardModule,
     AccessLogsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

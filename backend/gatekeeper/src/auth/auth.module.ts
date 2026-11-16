@@ -27,5 +27,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
+  // The realtime gateway verifies socket handshakes with the same JWT config.
+  exports: [JwtModule],
 })
 export class AuthModule {}

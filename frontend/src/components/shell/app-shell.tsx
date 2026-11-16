@@ -11,6 +11,7 @@ import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { LogoutButton } from "@/components/shell/logout-button";
 import { UserBadge } from "@/components/shell/user-badge";
 import { SessionHydrator } from "@/components/providers/session-hydrator";
+import { RealtimeListener } from "@/components/providers/realtime-listener";
 import { NAV_BY_ROLE } from "@/lib/config/nav";
 import type { Role } from "@/types/api";
 
@@ -31,6 +32,8 @@ export function AppShell({
   return (
     <div className="flex min-h-dvh">
       <SessionHydrator />
+      {/* Guards already see each scan result directly; they get no live feed. */}
+      {role !== "guard" && <RealtimeListener role={role} />}
 
       <aside className="hidden w-64 shrink-0 flex-col gap-6 bg-sidebar px-4 py-6 text-sidebar-foreground md:flex">
         <Brand appName={appName} />

@@ -24,4 +24,7 @@ export const queryKeys = {
     summary: ["dashboard", "summary"] as const,
     analytics: (query: unknown) => ["dashboard", "analytics", query] as const,
   },
+  settings: {
+    detail: ["settings"] as const,
+  },
 } as const;

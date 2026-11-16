@@ -74,7 +74,8 @@
     "accessLog": "Access log",
     "myPasses": "My passes",
     "scan": "Scan",
-    "logout": "Log out"
+    "logout": "Log out",
+    "settings": "Settings"
   },
   "passes": {
     "title": "My passes",
@@ -225,6 +226,14 @@
       "reason": "Reason",
       "scannedAt": "Scanned at",
       "empty": "No scans match these filters."
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Compound-wide configuration.",
+      "maxActivePassesPerUnitPerDay": "Max active passes per unit per day",
+      "maxActivePassesHint": "Leave empty for no limit.",
+      "unlimitedPlaceholder": "No limit",
+      "invalidLimit": "Must be a whole number of 1 or more"
     }
   },
   "errors": {
@@ -234,5 +243,11 @@
     "forbidden": "You don't have access to that.",
     "notFound": "We couldn't find that.",
     "pendingBackend": "This feature is waiting on a backend endpoint that hasn't shipped yet."
+  },
+  "realtime": {
+    "residentEntered": "Your guest {guest} just entered (Unit {unit}).",
+    "adminEntered": "{guest} just entered — Unit {unit}.",
+    "denied": "{guest} was denied at the gate (Unit {unit}): {reason}",
+    "unknownCode": "An unrecognized code was scanned at the gate."
   }
 }

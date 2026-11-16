@@ -3,7 +3,8 @@
     "emailInUse": "Email already in use",
     "invalidCredentials": "Invalid email or password",
     "loggedIn": "Logged in successfully",
-    "userCreated": "User created successfully"
+    "userCreated": "User created successfully",
+    "tooManyRequests": "Too many requests — please try again in a minute"
   },
   "buildings": {
     "notFound": "Building not found",
@@ -38,6 +39,10 @@
     "created": "Guest pass created",
     "updated": "Guest pass updated",
     "revoked": "Guest pass revoked",
-    "deleted": "Guest pass deleted"
+    "deleted": "Guest pass deleted",
+    "dailyLimitExceeded": "This unit has reached the admin-configured daily guest pass limit"
+  },
+  "settings": {
+    "updated": "Settings updated"
   }
 }

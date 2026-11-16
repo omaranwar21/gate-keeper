@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Building2, DoorOpen, ScrollText, Ticket, ScanLine } from "lucide-react";
+import { LayoutDashboard, Building2, DoorOpen, ScrollText, Ticket, ScanLine, Settings } from "lucide-react";
 import type { Role } from "@/types/api";
 
 export interface NavItem {
@@ -14,6 +14,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { href: "/admin/buildings", labelKey: "buildings", icon: Building2 },
     { href: "/admin/units", labelKey: "units", icon: DoorOpen },
     { href: "/admin/access-log", labelKey: "accessLog", icon: ScrollText },
+    { href: "/admin/settings", labelKey: "settings", icon: Settings },
   ],
   resident: [{ href: "/resident/passes", labelKey: "myPasses", icon: Ticket }],
   guard: [{ href: "/guard/scan", labelKey: "scan", icon: ScanLine }],
