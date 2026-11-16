@@ -218,6 +218,24 @@ Free tiers throughout. **Vercel** for the frontend (first-class Next.js support:
 
 ---
 
+## Local development with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Brings up Postgres, the API, and the frontend together — no local Node/Postgres install needed. All three are wired together on Docker's internal network (the frontend reaches the API at `http://backend:3000`, matching the BFF proxy described above), and the API container runs `prisma migrate deploy` on every start, so the schema is always current.
+
+Every variable has a working default, so the command above needs nothing else. Copy [`.env.example`](.env.example) to `.env` only to override something — a real `JWT_SECRET`, or `POSTGRES_PORT` / `BACKEND_PORT` / `FRONTEND_PORT` if 5432/3000/3001 are already taken locally.
+
+To seed demo data (1 admin, 2 guards, 5 residents, a populated building) into the running stack:
+
+```bash
+docker compose exec backend node dist/prisma/seed.js
+```
+
+(Not `npm run db:seed` — that script also rebuilds first, and the container's image doesn't carry the dev toolchain needed to do that; `dist/` is already built.)
+
 ## Deployment
 
 | Part | Host | Notes |
@@ -253,7 +271,7 @@ Why manual: the API is on Render's **free** plan, which doesn't offer a *Pre-Dep
 
 ## Skipped / known limitations
 
-- **Real-time updates, facility booking, offline gate, Docker Compose, CI/CD** — not done. Picked pass limits and Arabic/RTL as the bonuses within the timebox.
+- **Real-time updates, facility booking, offline gate, CI/CD** — not done. Picked pass limits and Arabic/RTL as the bonuses within the timebox.
 - **Role changes need a re-login:** `RoleGuard` trusts the role in the JWT (stateless, no DB lookup per request), so a changed role takes effect when the 1h token expires. Accepted for a short-lived token; a token version column or deny-list would fix it.
 - **No refresh tokens:** sessions last `JWT_EXPIRES_IN` (1h), then the user signs in again.
 - **Recurring passes allow multiple entries per allowed day** (a housekeeper can step out and back in). Limiting to one entry per day would mean recording per-day usage.
@@ -264,7 +282,6 @@ Why manual: the API is on Render's **free** plan, which doesn't offer a *Pre-Dep
 
 1. **Real-time** — SSE/WebSocket push for "Your guest Ahmed just entered" and a live dashboard access log.
 2. **CI/CD** — GitHub Actions running lint, unit and e2e tests (Postgres service container) on every PR, deploying on merge to `main`.
-3. **Docker Compose** for one-command local setup.
-4. **Offline gate mode** — cache a short-lived, signed allow-list of today's tokens on the guard device and queue scans for upload. The trade-off: a revoked pass or a one-time pass used at another gate could be accepted until the device reconnects, so it should be time-boxed and visibly flagged.
-5. **Security hardening** — refresh-token rotation, audit log for admin actions, token versioning for instant role/session revocation.
-6. Add frontend tests (component + Playwright for the three role flows).
+3. **Offline gate mode** — cache a short-lived, signed allow-list of today's tokens on the guard device and queue scans for upload. The trade-off: a revoked pass or a one-time pass used at another gate could be accepted until the device reconnects, so it should be time-boxed and visibly flagged.
+4. **Security hardening** — refresh-token rotation, audit log for admin actions, token versioning for instant role/session revocation.
+5. Add frontend tests (component + Playwright for the three role flows).

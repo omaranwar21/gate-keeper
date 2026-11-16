@@ -1,0 +1,60 @@
+# One-command local setup: `docker compose up --build`
+# Brings up Postgres, runs pending migrations, then starts the API and the
+# frontend, wired together on Docker's internal network. All variables have
+# working defaults, so this needs no .env file to run — copy .env.example to
+# .env only to override something (a real JWT secret, different ports, etc).
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gatekeeper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gatekeeper}
+      POSTGRES_DB: ${POSTGRES_DB:-gatekeeper}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - gatekeeper-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gatekeeper} -d ${POSTGRES_DB:-gatekeeper}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend/gatekeeper
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      # `db`, not localhost: service names are hostnames on the compose
+      # network, resolved by Docker's built-in DNS.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gatekeeper}:${POSTGRES_PASSWORD:-gatekeeper}@db:5432/${POSTGRES_DB:-gatekeeper}?schema=public
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the client bundle at build time (see frontend/Dockerfile),
+        # so it must be the URL a browser on the host can reach, not `backend`.
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
+    restart: unless-stopped
+    environment:
+      # Server-side only: the Next.js server proxies to the API over the
+      # compose network, so this one *does* use the service name.
+      BACKEND_URL: http://backend:3000
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
+    ports:
+      - "${FRONTEND_PORT:-3001}:3001"
+    depends_on:
+      - backend
+
+volumes:
+  gatekeeper-db-data:
