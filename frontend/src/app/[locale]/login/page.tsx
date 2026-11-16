@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormField } from "@/components/design-system/form-field";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
-import { isApiError } from "@/lib/api/error";
+import { apiErrorMessages, isApiError } from "@/lib/api/error";
 import { loginSchema, type LoginInput } from "@/lib/validation/auth";
 import { useUserLogin } from "@/hooks/queryHooks/useLogin";
 
@@ -47,7 +47,15 @@ export default function LoginPage() {
             setServerError(null);
             mutation.mutate(data, {
               onError: (error) => {
-                setServerError(isApiError(error) && error.status === 401 ? t("invalidCredentials") : t("genericError"));
+                if (isApiError(error) && error.status === 401) {
+                  setServerError(t("invalidCredentials"));
+                } else if (isApiError(error) && error.status === 429) {
+                  // The backend's own message is already translated and
+                  // specific ("try again in a minute") — show it as-is.
+                  setServerError(apiErrorMessages(error)[0] ?? t("genericError"));
+                } else {
+                  setServerError(t("genericError"));
+                }
               },
             });
           })}
