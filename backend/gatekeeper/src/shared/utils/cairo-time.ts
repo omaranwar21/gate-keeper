@@ -39,14 +39,51 @@ export function cairoLocalMinutes(instant: Date): {
   };
 }
 
+// How far Cairo's wall clock is ahead of UTC at `instant`, in ms: +2h in
+// winter (EET), +3h in summer (EEST, observed again since 2023).
+function cairoOffsetMs(instant: Date): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: CAIRO_TIME_ZONE,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(instant);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+  const wallClockAsUtc = Date.UTC(
+    get('year'),
+    get('month') - 1,
+    get('day'),
+    get('hour'),
+    get('minute'),
+    get('second'),
+  );
+  return wallClockAsUtc - Math.floor(instant.getTime() / 1000) * 1000;
+}
+
+// The first instant of the Cairo calendar day year-month-day (month 0-based,
+// overflow allowed, e.g. day 32). Usually local 00:00, but on the spring DST
+// day Egypt skips 00:00–00:59, so that day starts at 01:00. Guessing with
+// the offset at the guess itself, twice, settles on the right side of a
+// transition either way.
+function cairoStartOfDay(year: number, month: number, day: number): Date {
+  const midnightAsUtc = Date.UTC(year, month, day);
+  let guess = midnightAsUtc - cairoOffsetMs(new Date(midnightAsUtc));
+  guess = midnightAsUtc - cairoOffsetMs(new Date(guess));
+  return new Date(guess);
+}
+
 // Start (inclusive) / end (exclusive) of "now"'s calendar day in Cairo local
-// time, as UTC instants. Cairo currently has no DST, so subtracting the
-// local minute-of-day from `now` lands exactly on local midnight.
+// time, as UTC instants. A day is 24h, except 23h / 25h on DST change days.
 export function cairoDayBounds(now: Date): { start: Date; end: Date } {
-  const { minuteOfDay } = cairoLocalMinutes(now);
-  const start = new Date(now.getTime() - minuteOfDay * 60_000);
-  const end = new Date(start.getTime() + 24 * 60 * 60_000);
-  return { start, end };
+  const [year, month, day] = cairoDateKey(now).split('-').map(Number);
+  return {
+    start: cairoStartOfDay(year, month - 1, day),
+    end: cairoStartOfDay(year, month - 1, day + 1),
+  };
 }
 
 // The Cairo-local calendar date of `instant`, as "YYYY-MM-DD" — used to
