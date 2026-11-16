@@ -32,6 +32,9 @@ services:
       # `db`, not localhost: service names are hostnames on the compose
       # network, resolved by Docker's built-in DNS.
       DATABASE_URL: postgresql://${POSTGRES_USER:-gatekeeper}:${POSTGRES_PASSWORD:-gatekeeper}@db:5432/${POSTGRES_DB:-gatekeeper}?schema=public
+      # CORS allowlist for the realtime WebSocket handshake, which the
+      # browser opens directly (see frontend's BACKEND_PUBLIC_URL below).
+      FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-3001}
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     depends_on:
@@ -50,6 +53,10 @@ services:
       # Server-side only: the Next.js server proxies to the API over the
       # compose network, so this one *does* use the service name.
       BACKEND_URL: http://backend:3000
+      # The realtime socket connects from the *browser* instead (Vercel
+      # can't proxy WebSockets — see README), so it needs the API's
+      # host-reachable address, not the compose-network one above.
+      BACKEND_PUBLIC_URL: http://localhost:${BACKEND_PORT:-3000}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
     ports:
       - "${FRONTEND_PORT:-3001}:3001"

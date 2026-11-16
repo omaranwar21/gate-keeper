@@ -243,5 +243,11 @@
     "forbidden": "لا تملك صلاحية الوصول إلى هذا.",
     "notFound": "تعذّر العثور على ذلك.",
     "pendingBackend": "هذه الميزة بانتظار نقطة اتصال خلفية لم تُطلق بعد."
+  },
+  "realtime": {
+    "residentEntered": "ضيفك {guest} دخل الآن (وحدة {unit}).",
+    "adminEntered": "{guest} دخل الآن — وحدة {unit}.",
+    "denied": "تم رفض دخول {guest} (وحدة {unit}): {reason}",
+    "unknownCode": "تم مسح رمز غير معروف عند البوابة."
   }
 }

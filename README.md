@@ -47,9 +47,9 @@ The seed also creates 2 buildings (*Sunrise Tower*, *Marina Residences*), 10 uni
 
 **Guard** — mobile-first scan screen: scan with the device camera or paste a code/link, then a full-width green **ALLOWED** / red **DENIED** result with the reason, guest name and unit.
 
-**Every scan attempt** — allowed or denied, including unknown tokens — is written to the access log.
+**Every scan attempt** — allowed or denied, including unknown tokens — is written to the access log, and pushed live over WebSockets to admins and the scanned unit's residents (a toast, plus the dashboard/access-log/passes views refetching).
 
-**Bonuses done:** admin-configurable *max active passes per unit per day*, and *Arabic / RTL* support (UI and API error messages).
+**Bonuses done:** admin-configurable *max active passes per unit per day*, *Arabic / RTL* support (UI and API error messages), and *real-time* scan updates (Socket.IO).
 
 ---
 
@@ -82,6 +82,7 @@ npm run dev                   # http://localhost:3000/v1
 | `JWT_SECRET` | Secret used to sign access tokens |
 | `JWT_EXPIRES_IN` | Token lifetime (default `1h`) |
 | `PORT` | HTTP port (default `3000`) |
+| `FRONTEND_ORIGIN` | Origins allowed to open the realtime WebSocket (comma-separated). Unset = any origin. |
 
 ### 3. Frontend (port 3001)
 
@@ -212,6 +213,14 @@ All list endpoints (`buildings`, `units`, `passes/mine`, `users`, `access-logs`)
 
 Admins set `max active passes per unit per day` in Settings. On create, the service expands every non-revoked pass of the unit into the Cairo days it occupies (a recurring pass covers each matching weekday in its range) and rejects with 409 if any day would exceed the limit. The logic is a pure, unit-tested function ([`pass-limit.ts`](backend/gatekeeper/src/guest-passes/pass-limit.ts)).
 
+### Real-time updates (bonus) — Socket.IO, direct to the API
+
+Every scan (allowed or denied) is pushed live: admins get every one, a resident gets scans only for the units they belong to, and guards get none (they already see their own result in the HTTP response). The backend's `RealtimeGateway` ([`realtime.gateway.ts`](backend/gatekeeper/src/realtime/realtime.gateway.ts)) puts each connected socket into Socket.IO rooms on connect — `admins`, or `unit:<id>` per unit the resident belongs to — and `GuestPassesService` emits `access-log:created` to the right rooms after writing every access log, with the same shape as a `GET /access-logs` row so the client can use it as-is. Emitting is best-effort and wrapped in try/catch, so a realtime failure never fails the scan itself.
+
+Sockets authenticate with the same JWT as the REST API, sent as `{ auth: { token } }` on the handshake — a missing, invalid, or expired token disconnects the socket (and a connected one is force-disconnected the moment its token's `exp` passes, independent of any later HTTP activity).
+
+**Why the socket skips the BFF proxy:** Vercel can't proxy WebSocket connections, so unlike every REST call, the browser opens this one straight to the NestJS API instead of through the frontend's `/api/*` routes. That means the JWT has to reach client-side JavaScript for this one case — the frontend's `/api/auth/socket` route hands it over (reading it from the httpOnly session cookie, server-side) — and the API needs an actual CORS allowlist (`FRONTEND_ORIGIN`) for the socket handshake, since this is the one connection that *isn't* same-origin server-to-server. See *CORS / cookies* under Deployment.
+
 ### Hosting choice
 
 Free tiers throughout. **Vercel** for the frontend (first-class Next.js support: route handlers and middleware work as-is, with preview deploys). **Render** for the API (a plain long-running Node web service with managed HTTPS; a serverless platform would fight Nest's bootstrap and the Postgres connection pool). **Supabase** for managed Postgres. See *Deployment* below.
@@ -225,6 +234,8 @@ docker compose up --build
 ```
 
 Brings up Postgres, the API, and the frontend together — no local Node/Postgres install needed. All three are wired together on Docker's internal network (the frontend reaches the API at `http://backend:3000`, matching the BFF proxy described above), and the API container runs `prisma migrate deploy` on every start, so the schema is always current.
+
+**Realtime under Compose:** the WebSocket (see *Real-time updates* above) connects straight from the browser to the API, bypassing the frontend's proxy — so it needs an address the *browser* can resolve, not `http://backend:3000` (that hostname only exists on Docker's internal network). `BACKEND_PUBLIC_URL` on the frontend service carries that address (`http://localhost:${BACKEND_PORT}`, separate from `BACKEND_URL`, which is what the frontend's own server uses to reach the API over the compose network), and `FRONTEND_ORIGIN` on the backend service allows the handshake's CORS check. Both are derived from `BACKEND_PORT` / `FRONTEND_PORT` automatically, so overriding those (e.g. to dodge a port conflict) keeps everything consistent with no extra config.
 
 Every variable has a working default, so the command above needs nothing else. Copy [`.env.example`](.env.example) to `.env` only to override something — a real `JWT_SECRET`, or `POSTGRES_PORT` / `BACKEND_PORT` / `FRONTEND_PORT` if 5432/3000/3001 are already taken locally.
 
@@ -246,7 +257,9 @@ docker compose exec backend node dist/prisma/seed.js
 
 **Configuration** comes only from environment variables set in each host's dashboard. Nothing secret is committed. See [`backend/gatekeeper/.env.example`](backend/gatekeeper/.env.example) and [`frontend/.env.example`](frontend/.env.example).
 
-**CORS / cookies:** the browser never calls the API directly. It talks only to the frontend's own `/api/*` routes, which proxy server-to-server with the bearer token. That means no CORS configuration is needed on the API, and the session cookie is first-party (`httpOnly`, `Secure`, `SameSite=Lax`) on the frontend domain. No cross-site cookie problems.
+**CORS / cookies:** for every REST call, the browser never calls the API directly — it talks only to the frontend's own `/api/*` routes, which proxy server-to-server with the bearer token. That means no CORS configuration is needed for REST, and the session cookie is first-party (`httpOnly`, `Secure`, `SameSite=Lax`) on the frontend domain. No cross-site cookie problems.
+
+The one exception is the realtime WebSocket (see *Real-time updates* above): Vercel can't proxy it, so that connection goes straight from the browser to the Render API, cross-origin. `FRONTEND_ORIGIN` on the API is the CORS allowlist for that one handshake — set it to the deployed frontend's origin in production (comma-separated if there's more than one, e.g. a preview + production URL).
 
 **Backend build/start on Render:**
 
@@ -271,7 +284,7 @@ Why manual: the API is on Render's **free** plan, which doesn't offer a *Pre-Dep
 
 ## Skipped / known limitations
 
-- **Real-time updates, facility booking, offline gate, CI/CD** — not done. Picked pass limits and Arabic/RTL as the bonuses within the timebox.
+- **Facility booking, offline gate, CI/CD** — not done. Picked pass limits, Arabic/RTL, and real-time updates as the bonuses within the timebox.
 - **Role changes need a re-login:** `RoleGuard` trusts the role in the JWT (stateless, no DB lookup per request), so a changed role takes effect when the 1h token expires. Accepted for a short-lived token; a token version column or deny-list would fix it.
 - **No refresh tokens:** sessions last `JWT_EXPIRES_IN` (1h), then the user signs in again.
 - **Recurring passes allow multiple entries per allowed day** (a housekeeper can step out and back in). Limiting to one entry per day would mean recording per-day usage.
@@ -280,8 +293,7 @@ Why manual: the API is on Render's **free** plan, which doesn't offer a *Pre-Dep
 
 ## What I'd do next with more time
 
-1. **Real-time** — SSE/WebSocket push for "Your guest Ahmed just entered" and a live dashboard access log.
-2. **CI/CD** — GitHub Actions running lint, unit and e2e tests (Postgres service container) on every PR, deploying on merge to `main`.
-3. **Offline gate mode** — cache a short-lived, signed allow-list of today's tokens on the guard device and queue scans for upload. The trade-off: a revoked pass or a one-time pass used at another gate could be accepted until the device reconnects, so it should be time-boxed and visibly flagged.
-4. **Security hardening** — refresh-token rotation, audit log for admin actions, token versioning for instant role/session revocation.
-5. Add frontend tests (component + Playwright for the three role flows).
+1. **CI/CD** — GitHub Actions running lint, unit and e2e tests (Postgres service container) on every PR, deploying on merge to `main`.
+2. **Offline gate mode** — cache a short-lived, signed allow-list of today's tokens on the guard device and queue scans for upload. The trade-off: a revoked pass or a one-time pass used at another gate could be accepted until the device reconnects, so it should be time-boxed and visibly flagged.
+3. **Security hardening** — refresh-token rotation, audit log for admin actions, token versioning for instant role/session revocation.
+4. Add frontend tests (component + Playwright for the three role flows).
