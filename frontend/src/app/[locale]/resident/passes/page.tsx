@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus, QrCode, Ban, Trash2 } from "lucide-react";
+import { Plus, QrCode, Ban } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import {
   DataTable,
@@ -16,7 +16,7 @@ import { StatusBadge } from "@/components/design-system/status-badge";
 import { ConfirmDialog } from "@/components/design-system/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { usePassesMine, useRevokePass, useDeletePass } from "@/hooks/queryHooks/usePasses";
+import { usePassesMine, useRevokePass } from "@/hooks/queryHooks/usePasses";
 import { passStatusTone } from "@/lib/status";
 import { passWindowSummary } from "@/lib/pass-summary";
 import type { GuestPass, PassStatus } from "@/types/api";
@@ -29,7 +29,7 @@ export default function ResidentPassesPage() {
   const [status, setStatus] = useState<string>();
   const [today, setToday] = useState<string>();
   const [revokeTarget, setRevokeTarget] = useState<GuestPass | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<GuestPass | null>(null);
+  // const [deleteTarget, setDeleteTarget] = useState<GuestPass | null>(null);
 
   const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((d) => t(`days.${d}`));
 
@@ -66,7 +66,7 @@ export default function ResidentPassesPage() {
   }
 
   const revokeMutation = useRevokePass();
-  const deleteMutation = useDeletePass();
+  // const deleteMutation = useDeletePass();
 
   const columns: DataTableColumn<GuestPass>[] = [
     {
@@ -85,7 +85,9 @@ export default function ResidentPassesPage() {
       key: "unit",
       header: tCommon("unit"),
       cell: (pass) =>
-        pass.unit ? `${pass.unit.building?.name ?? ""} · ${pass.unit.number}` : "—",
+        pass.unit
+          ? `${pass.unit.building?.name ?? ""} · ${pass.unit.number}`
+          : "—",
     },
     {
       key: "type",
@@ -136,14 +138,14 @@ export default function ResidentPassesPage() {
               <Ban className="size-4 text-danger" />
             </Button>
           )}
-          <Button
+          {/* <Button
             variant="ghost"
             size="icon"
             onClick={() => setDeleteTarget(pass)}
             aria-label={tCommon("delete")}
           >
             <Trash2 className="size-4 text-muted-foreground" />
-          </Button>
+          </Button> */}
         </div>
       ),
     },
@@ -197,12 +199,15 @@ export default function ResidentPassesPage() {
           guestName: revokeTarget?.guestName ?? "",
         })}
         onConfirm={() =>
-          revokeTarget && revokeMutation.mutate(revokeTarget.id, { onSuccess: () => setRevokeTarget(null) })
+          revokeTarget &&
+          revokeMutation.mutate(revokeTarget.id, {
+            onSuccess: () => setRevokeTarget(null),
+          })
         }
         isPending={revokeMutation.isPending}
       />
 
-      <ConfirmDialog
+      {/* <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t("deleteConfirmTitle")}
@@ -211,7 +216,7 @@ export default function ResidentPassesPage() {
           deleteTarget && deleteMutation.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })
         }
         isPending={deleteMutation.isPending}
-      />
+      /> */}
     </div>
   );
 }

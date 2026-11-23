@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CurrentRole } from '../auth/decorators/roles.decorator';
+import { PermittedRole } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import type { JwtPayload } from '../auth/strategies/jwt.strategy';
@@ -27,14 +27,14 @@ import { SuccessMessage } from '../i18n/success-message.decorator';
 export class GuestPassesController {
   constructor(private readonly guestPassesService: GuestPassesService) {}
 
-  @CurrentRole(Role.Resident)
+  @PermittedRole(Role.Resident)
   @Post()
   @SuccessMessage('guestPasses.created')
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateGuestPassDto) {
     return this.guestPassesService.create(user.sub, dto);
   }
 
-  @CurrentRole(Role.Resident)
+  @PermittedRole(Role.Resident)
   @Get('mine')
   findMine(
     @CurrentUser() user: JwtPayload,
@@ -43,13 +43,13 @@ export class GuestPassesController {
     return this.guestPassesService.findMine(user.sub, query);
   }
 
-  @CurrentRole(Role.Resident)
+  @PermittedRole(Role.Resident)
   @Get(':id')
   findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.guestPassesService.findOneForResident(user.sub, id);
   }
 
-  @CurrentRole(Role.Resident, Role.Admin)
+  @PermittedRole(Role.Resident, Role.Admin)
   @Patch(':id')
   @SuccessMessage('guestPasses.updated')
   update(
@@ -60,21 +60,21 @@ export class GuestPassesController {
     return this.guestPassesService.update(user, id, dto);
   }
 
-  @CurrentRole(Role.Resident, Role.Admin)
+  @PermittedRole(Role.Resident, Role.Admin)
   @Patch(':id/revoke')
   @SuccessMessage('guestPasses.revoked')
   revoke(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.guestPassesService.revoke(user, id);
   }
 
-  @CurrentRole(Role.Resident, Role.Admin)
-  @Delete(':id')
-  @SuccessMessage('guestPasses.deleted')
-  remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    return this.guestPassesService.remove(user, id);
-  }
+  // @PermittedRole(Role.Resident, Role.Admin)
+  // @Delete(':id')
+  // @SuccessMessage('guestPasses.deleted')
+  // remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  //   return this.guestPassesService.remove(user, id);
+  // }
 
-  @CurrentRole(Role.Guard)
+  @PermittedRole(Role.Guard)
   @Post('scan')
   scan(@CurrentUser() user: JwtPayload, @Body() dto: ScanPassDto) {
     return this.guestPassesService.scan(user.sub, dto);

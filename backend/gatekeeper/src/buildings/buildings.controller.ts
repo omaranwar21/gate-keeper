@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CurrentRole } from '../auth/decorators/roles.decorator';
+import { PermittedRole } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import { SuccessMessage } from '../i18n/success-message.decorator';
@@ -20,7 +20,7 @@ import { CreateBuildingDto } from './dto/create-building.dto';
 import { UpdateBuildingDto } from './dto/update-building.dto';
 
 @UseGuards(JwtAuthGuard, RoleGuard)
-@CurrentRole(Role.Admin)
+@PermittedRole(Role.Admin)
 @Controller('buildings')
 export class BuildingsController {
   constructor(private readonly buildingsService: BuildingsService) {}

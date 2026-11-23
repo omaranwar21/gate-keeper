@@ -3,7 +3,7 @@ import { RegisterDto } from '../auth/dto/register.dto';
 import { AuthService } from '../auth/auth.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
-import { CurrentRole } from '../auth/decorators/roles.decorator';
+import { PermittedRole } from '../auth/decorators/roles.decorator';
 import { Role } from '../users/role.enum';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import * as jwtStrategy from '../auth/strategies/jwt.strategy';
@@ -19,7 +19,7 @@ export class UsersController {
   ) {}
 
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Post('create')
   @SuccessMessage('auth.userCreated')
   register(@Body() dto: RegisterDto) {
@@ -27,7 +27,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Get()
   findAll(
     @Query('role') role?: Role,

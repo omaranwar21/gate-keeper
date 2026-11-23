@@ -51,19 +51,19 @@ export function useRevokePass() {
   });
 }
 
-export function useDeletePass() {
-  const tCommon = useTranslations("common");
-  const queryClient = useQueryClient();
+// export function useDeletePass() {
+//   const tCommon = useTranslations("common");
+//   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (id: string) => passesApi.remove(id),
-    onSuccess: (response) => {
-      toast.success(response.message);
-      queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
-    },
-    onError: (error) => toastApiError(error, tCommon("somethingWrong")),
-  });
-}
+//   return useMutation({
+//     mutationFn: (id: string) => passesApi.remove(id),
+//     onSuccess: (response) => {
+//       toast.success(response.message);
+//       queryClient.invalidateQueries({ queryKey: queryKeys.passes.all });
+//     },
+//     onError: (error) => toastApiError(error, tCommon("somethingWrong")),
+//   });
+// }
 
 export function useScanPass() {
   const t = useTranslations("guard");

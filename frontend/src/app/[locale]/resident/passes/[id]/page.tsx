@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, Ban, Trash2 } from "lucide-react";
+import { ArrowLeft, Ban } from "lucide-react";
 import { PageHeader } from "@/components/design-system/page-header";
 import { StatusBadge } from "@/components/design-system/status-badge";
 import { QrDisplay } from "@/components/design-system/qr-display";
@@ -10,28 +10,32 @@ import { ConfirmDialog } from "@/components/design-system/confirm-dialog";
 import { ErrorState } from "@/components/design-system/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Link, useRouter } from "@/i18n/navigation";
-import { usePassDetail, useRevokePass, useDeletePass } from "@/hooks/queryHooks/usePasses";
+import { Link } from "@/i18n/navigation";
+import { usePassDetail, useRevokePass } from "@/hooks/queryHooks/usePasses";
 import { passStatusTone } from "@/lib/status";
 import { passWindowSummary } from "@/lib/pass-summary";
 import { guestPassLink } from "@/lib/pass-link";
 import { formatCairoDateTime } from "@/lib/dates";
 import type { PassStatus } from "@/types/api";
 
-export default function GuestPassDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function GuestPassDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const t = useTranslations("passes");
   const tCommon = useTranslations("common");
   const locale = useLocale();
-  const router = useRouter();
+  // const router = useRouter();
   const [revokeOpen, setRevokeOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  // const [deleteOpen, setDeleteOpen] = useState(false);
 
   const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((d) => t(`days.${d}`));
 
   const query = usePassDetail(id);
   const revokeMutation = useRevokePass();
-  const deleteMutation = useDeletePass();
+  // const deleteMutation = useDeletePass();
 
   if (query.isLoading) {
     return (
@@ -43,7 +47,13 @@ export default function GuestPassDetailPage({ params }: { params: Promise<{ id: 
   }
 
   if (query.isError || !query.data) {
-    return <ErrorState title={t("notFound")} retryLabel={tCommon("retry")} onRetry={() => query.refetch()} />;
+    return (
+      <ErrorState
+        title={t("notFound")}
+        retryLabel={tCommon("retry")}
+        onRetry={() => query.refetch()}
+      />
+    );
   }
 
   const pass = query.data;
@@ -60,16 +70,35 @@ export default function GuestPassDetailPage({ params }: { params: Promise<{ id: 
 
       <PageHeader
         title={pass.guestName}
-        description={pass.unit?.building ? `${pass.unit.building.name} · ${pass.unit.number}` : undefined}
-        actions={<StatusBadge tone={passStatusTone(status)}>{t(`status.${status}`)}</StatusBadge>}
+        description={
+          pass.unit?.building
+            ? `${pass.unit.building.name} · ${pass.unit.number}`
+            : undefined
+        }
+        actions={
+          <StatusBadge tone={passStatusTone(status)}>
+            {t(`status.${status}`)}
+          </StatusBadge>
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
-          <Row label={t("type")} value={pass.type === "one_time" ? t("oneTime") : t("recurring")} />
-          <Row label={t("validFrom")} value={passWindowSummary(pass, locale, dayLabels)} />
+          <Row
+            label={t("type")}
+            value={pass.type === "one_time" ? t("oneTime") : t("recurring")}
+          />
+          <Row
+            label={t("validFrom")}
+            value={passWindowSummary(pass, locale, dayLabels)}
+          />
           {pass.revokedAt && (
-            <Row label={t("revoke")} value={t("revokedOn", { date: formatCairoDateTime(pass.revokedAt, locale) })} />
+            <Row
+              label={t("revoke")}
+              value={t("revokedOn", {
+                date: formatCairoDateTime(pass.revokedAt, locale),
+              })}
+            />
           )}
 
           {status === "active" && (
@@ -78,26 +107,33 @@ export default function GuestPassDetailPage({ params }: { params: Promise<{ id: 
                 <Ban className="size-4" />
                 {t("revoke")}
               </Button>
-              <Button variant="ghost" onClick={() => setDeleteOpen(true)}>
+              {/* <Button variant="ghost" onClick={() => setDeleteOpen(true)}>
                 <Trash2 className="size-4" />
                 {tCommon("delete")}
-              </Button>
+              </Button> */}
             </div>
           )}
-          {status !== "active" && (
+          {/* {status !== "active" && (
             <div className="pt-2">
               <Button variant="ghost" onClick={() => setDeleteOpen(true)}>
                 <Trash2 className="size-4" />
                 {tCommon("delete")}
               </Button>
             </div>
-          )}
+          )} */}
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6">
-          <h2 className="mb-4 text-sm font-medium text-foreground">{t("qrTitle")}</h2>
-          <p className="mb-4 text-sm text-muted-foreground">{t("qrDesc", { guestName: pass.guestName })}</p>
-          <QrDisplay value={guestPassLink(pass.token, locale)} fileName={`pass-${pass.guestName}`} />
+          <h2 className="mb-4 text-sm font-medium text-foreground">
+            {t("qrTitle")}
+          </h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            {t("qrDesc", { guestName: pass.guestName })}
+          </p>
+          <QrDisplay
+            value={guestPassLink(pass.token, locale)}
+            fileName={`pass-${pass.guestName}`}
+          />
         </div>
       </div>
 
@@ -106,17 +142,19 @@ export default function GuestPassDetailPage({ params }: { params: Promise<{ id: 
         onOpenChange={setRevokeOpen}
         title={t("revokeConfirmTitle")}
         description={t("revokeConfirmDesc", { guestName: pass.guestName })}
-        onConfirm={() => revokeMutation.mutate(id, { onSuccess: () => setRevokeOpen(false) })}
+        onConfirm={() =>
+          revokeMutation.mutate(id, { onSuccess: () => setRevokeOpen(false) })
+        }
         isPending={revokeMutation.isPending}
       />
-      <ConfirmDialog
+      {/* <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title={t("deleteConfirmTitle")}
         description={t("deleteConfirmDesc")}
         onConfirm={() => deleteMutation.mutate(id, { onSuccess: () => router.push("/resident/passes") })}
         isPending={deleteMutation.isPending}
-      />
+      /> */}
     </div>
   );
 }

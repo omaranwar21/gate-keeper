@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CurrentRole } from '../auth/decorators/roles.decorator';
+import { PermittedRole } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import type { JwtPayload } from '../auth/strategies/jwt.strategy';
@@ -18,14 +18,14 @@ export class UnitsController {
   constructor(private readonly unitsService: UnitsService) {}
 
   @UseGuards(RoleGuard)
-  @CurrentRole(Role.Resident)
+  @PermittedRole(Role.Resident)
   @Get('mine')
   findMine(@CurrentUser() user: JwtPayload, @Query() pagination: PaginationQueryDto) {
     return this.unitsService.findMyUnits(user.sub, pagination);
   }
 
   @UseGuards(RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Post()
   @SuccessMessage('units.created')
   create(@Body() dto: CreateUnitDto) {
@@ -33,21 +33,21 @@ export class UnitsController {
   }
 
   @UseGuards(RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Get()
   findAll(@Query('buildingId') buildingId?: string, @Query() pagination?: PaginationQueryDto) {
     return this.unitsService.findAll(buildingId, pagination);
   }
 
   @UseGuards(RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.unitsService.findOne(id);
   }
 
   @UseGuards(RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Patch(':id')
   @SuccessMessage('units.updated')
   update(@Param('id') id: string, @Body() dto: UpdateUnitDto) {
@@ -55,7 +55,7 @@ export class UnitsController {
   }
 
   @UseGuards(RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Delete(':id')
   @SuccessMessage('units.deleted')
   remove(@Param('id') id: string) {
@@ -63,7 +63,7 @@ export class UnitsController {
   }
 
   @UseGuards(RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Post(':id/residents')
   @SuccessMessage('units.residentAssigned')
   assignResident(@Param('id') id: string, @Body() dto: AssignResidentDto) {
@@ -71,7 +71,7 @@ export class UnitsController {
   }
 
   @UseGuards(RoleGuard)
-  @CurrentRole(Role.Admin)
+  @PermittedRole(Role.Admin)
   @Delete(':id/residents/:userId')
   @SuccessMessage('units.residentUnassigned')
   unassignResident(@Param('id') id: string, @Param('userId') userId: string) {
